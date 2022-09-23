@@ -99,6 +99,8 @@ for file in glob.glob(args.indir+'*.tsv'):
     nly["median"]=no_lymph_myeloid.median(axis=1)
     nly["min"]=no_lymph_myeloid.min(axis=1)
     nly["max"]=no_lymph_myeloid.max(axis=1)
+    
+    
 
     dict={"all":All,"lymphoMyeloid":lym,"nonLymphoMyeloid":nly}
 
@@ -107,8 +109,11 @@ for file in glob.glob(args.indir+'*.tsv'):
         dt=pd.DataFrame(dict[key])
         dt["ontologyGroup"]=key
         dt_list.append(dt.copy())
-
-    dt=pd.concat(dt_list) 
+    
+    dtemp=pd.DataFrame(lym)-pd.DataFrame(nly)
+    dtemp["ontologyGroup"]="Delta"
+    dt=pd.concat(dt_list+[dtemp.copy()])
+    
     dt=dt.reset_index().rename({"index":"performance"}, axis=1) 
     #print(concat_Table.round(2))
     for group in GROUPS:
