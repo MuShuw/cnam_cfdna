@@ -56,7 +56,7 @@ def create_figure():
             (DF["sortingMethod"].isin([SORTS[xx] for xx in sort_box.active])) 
            ].copy()
     df["sz"]=[SIZES[xx] for xx in df[size.value].astype("category").cat.codes]
-    print(rna_box.active,"\n\n\n\n\n\n\n\n\n\n__________________________________________________\n\n\n\n\n\n\n\n\n\n")
+    
     source = ColumnDataSource(df)         
     
     x_title = x.value.title()
