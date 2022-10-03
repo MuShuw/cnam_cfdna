@@ -1,17 +1,31 @@
+# README
 
-# 01 TSS score extracion
-The script 01_ScorePerSite.extract from the per chromosome scoring, the score around all TSS
+## Calculating the genome-wide, fragmentomic profiles
 
-input : folder containing the chromosome scoring
-output : 2 files containing the FD and WPS scores around TSSs of a given GeneClass (-gc)
+Script `src/00_BamToChrScore.py`.
 
-to be done for both coding_mRNA and lncRNA_intergenic
+## Calculating the gene-centric, fragmentomic profiles
 
-usage :
+Script `src/src/01_ScorePerSite.py`.
+
+<dl>
+<dt>Input</dt>  <dd>Path to a folder containing the chromosome scoring</dd>
+<dt>Output</dt> <dd>2 files containing the FD and WPS scores around TSSs of a given GeneClass (-gc)</dd>
+</dl>
+
+Coding genes
+
+```bash
 python3 src/01_ScorePerSite.py -i data/01_chr_score/ -o data/02_tss_score/ -gc coding_mRNA -ft5 data/90_fantom/intermediary/
-python3 src/01_ScorePerSite.py -i data/01_chr_score/ -o data/02_tss_score/ -gc lncRNA_intergenic -ft5 data/90_fantom/intermediary/
+```
 
-# 02 Features generation
+Long intergenic, non-coding RNAL
+
+```bash
+python3 src/01_ScorePerSite.py -i data/01_chr_score/ -o data/02_tss_score/ -gc lncRNA_intergenic -ft5 data/90_fantom/intermediary/
+```
+
+## 02 Features generation
 The script 02_FeatsExtraction.py calculate the features for each genes
 
 input : TSS's WPS and FD table for a GeneClass 
