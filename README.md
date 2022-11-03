@@ -1,5 +1,12 @@
 # README
 
+For this work, we relied on
+Python (3.6.9),
+NumPy (1.19.5),
+Pandas (1.1.5),
+Scikit-Learn (0.24.2) and
+Pysam (0.19.1).
+
 ## Calculating the genome-wide, fragmentomic profiles
 
 Script `src/00_BamToChrScore.py`.
@@ -64,43 +71,75 @@ python 02_FeatsExtraction.py \
 A *model configuration* is given by choosing
 
 * between coding genes or intergenic lncRNA genes
-* an operational definition of gene class A (eg, top 100 genes based on positive fold-changes)
+* an operational definition of gene class A (eg, top 100 genes with positive fold-changes)
 * an operational definition of gene class B (eg, ubiquitous genes)
 * a set of fragmentomic features to include
 
 We test many model configurations.
 
-The script `032_parallel_ClassificationScoring.sh` is used to train the gene classification model for each FANTOM tissue and each model configurations.
+The script `032_parallel_ClassificationScoring.sh` is used to train the gene classification model for each FANTOM ontology and each model configurations. It relies, internally, on the `03b_ClassificationScoring.py` script, which trains an SVM model for each model configuration (see below).
 
 ### LincRNA configurations
 
 ```bash
-bash 032_parallel_ClassificationScoring.sh    \
-    data/03_features/lincRNA_features.tsv     \ # linc features (from previous step)
-    data/04_SVC_performances/lincrna/         \ # output directory
-    100                                       \ # number of genes in each class
-    data/90_fantom/onto/                      \ # ontologies tables
-    data/03b_control_features/Leuko_feats.tsv \ # control features 1
-    data/03b_control_features/Ubi_feats.tsv   \ # features of ubiquitous genes
+bash 032_parallel_ClassificationScoring.sh     \
+     data/03_features/lincRNA_features.tsv     \ # linc features (from previous step)
+     data/04_SVC_performances/lincrna/         \ # output directory
+     100                                       \ # number of genes in each class
+     data/90_fantom/onto/                      \ # ontologies
+     data/03b_control_features/Leuko_feats.tsv \ # features with leukocyte p-values/FC
+     data/03b_control_features/Ubi_feats.tsv     # features of ubiquitous genes
 ```
 
 ### Running mRNA scoring
 
-sudo bash src/032_parallel_ClassificationScoring.sh data/03_features/mRNA_features.tsv data/04_SVC_performances/mrna/ 100 data/90_fantom/ontho/ data/03b_control_features/Leuko_feats.tsv data/03b_control_features/Ubi_feats.tsv
+```bash
+bash 032_parallel_ClassificationScoring.sh     \
+     data/03_features/mRNA_features.tsv        \ # coding features (from previous step)
+     data/04_SVC_performances/mrna/            \ # output directory
+     100                                       \
+     data/90_fantom/onto/                      \
+     data/03b_control_features/Leuko_feats.tsv \
+     data/03b_control_features/Ubi_feats.tsv
+```
 
-## 03a Supervised learning 
+### Classification model
 
+The classification model used in this work is a kernel support vector machine (implemented by Scikit-Learn).
+
+The configuration is parametered by the variables `cat`, `group`, `sort` and `feats`:
+
+```bash
+cat="data/03_features/lincRNA_features.tsv"
 group="PFb"
-feats="Ulz"
 sort="mann_whitney_pval"
+feats="Ulz"
 rank=100
 NAME="$group"_"$sort"_"$feats"
-python3 src/03b_ClassificationScoring.py -r $rank -i data/90_fantom/ontho/ -g $group -f $feats -if data/03_features/lincRNA_features.tsv -lbf data/03b_control_features/Leuko_feats.tsv -u data/03b_control_features/Ubi_feats.tsv -sb mann_whitney_pval -o data/04_SVC_performances/"$NAME"_svc_Intermediary -v
 
+python3 03b_ClassificationScoring.py -v            \
+    -r $rank                                       \ # rank=100
+    -i data/90_fantom/onto/                        \
+    -g $group                                      \ # group="PFb"
+    -sb $sort                                      \ # sort="mann_whitney_pval" 
+    -f $feats                                      \ # feats="Ulz"
+    -if $cat      \
+    -lbf data/03b_control_features/Leuko_feats.tsv \
+    -u data/03b_control_features/Ubi_feats.tsv     \
+    -o data/04_SVC_performances/"$NAME"_svc_Intermediary # output file
+```
 
-## 041
+In this example:
+
+* Genes are sorted by $p$-value
+* Class A: 100 positive fold-change genes at the top of the list (most significant $p$-values)
+* Class B: 100 genes at the bottom of the list (least significant)
+* Training uses the feature set know as ‘Ulz’
+
+## Postprocessing
 
 ## Joining SVM output in one folder
+
 bash src/041_join_SVM_output.sh
 
 ## 042
