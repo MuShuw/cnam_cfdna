@@ -1,0 +1,420 @@
+---
+title: "Figures"
+author: "Elyas Mouhou et al."
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE, comment=TRUE)
+options(readr.show_col_types = FALSE)
+```
+
+## Preamble
+
+```{r, message=FALSE, warning=FALSE}
+library('tidyverse')
+library('ggrepel')
+library('ggpubr')
+library('gridExtra')
+library('cowplot')
+theme_set(theme_bw())
+set.seed(123)
+```
+
+```{r}
+headtail = function (df, n=6) {
+  bind_rows(df %>% head(n), df %>% tail(n))
+}
+
+headrandtail = function (df, n=6) {
+  l = nrow(df)
+  indices = c(seq(1, n), seq(l - n + 1, l), sample(seq(n + 1, l - n), size=n))
+  indices = sort(indices)
+  df[indices, ]
+}
+```
+
+### Separate graph and legend
+
+Solution #2 is best since is allows for the legend to be saved alone.
+
+#### Solution #1
+
+```r
+# https://stackoverflow.com/questions/12539348/ggplot-separate-legend-and-plot
+
+library('gridExtra')
+
+gglegend = function (plot) {
+  tmp = ggplot_gtable(ggplot_build(plot))
+  leg = which(sapply(tmp$grobs, function(x) x$name) == 'guide-box')
+  legend = tmp$grobs[[leg]]
+  legend
+}
+
+nolegend = function (plot) {
+  plot + theme(legend.position='none')
+}
+
+# Use as:
+
+# legend = gglegend(plot1)
+# grid.arrange(legend, nolegend(plot1),
+#              ncol=2, nrow=1, widths=c(1/6, 5/6))
+```
+
+#### Solution #2
+
+Using the `ggpubr` library and its `as_ggplot(get_legend(g))` command See https://rpkgs.datanovia.com/ggpubr/reference/get_legend.html.
+
+## Raw data
+
+```{r}
+comp = strsplit('PFb NFb PFNF PFu NFu bu PFlb NFlb blb PFmid NFmid bmid bNF', ' ')[[1]]
+
+filename = '../data/042_SVC_performances_means/grouped_performance.tsv';
+hdr = read_table(filename, n_max=1, col_names=FALSE) %>% unlist(use.names=FALSE)
+dat = read_table(filename, skip=1, col_names=c('index', hdr)) %>% select(-index)
+dat = dat %>%
+  filter(performance == 'accuracy_mean') %>%
+  select(-median, -min) %>%
+  rename(ontology=ontologyGroup, sort=sortingMethod, set=features, category=rna_type) %>%
+  mutate(group=recode(group,
+                      PFb="PF:b", NFb="NF:b", PFNF="PF:NF", PFu="PF:u",
+                      NFu="NF:u", bu="b:u", PFlb="PF:lb", NFlb="NF:lb",
+                      blb="b:lb", PFmid="PF:mid", NFmid="NF:mid",
+                      bmid="b:mid", bNF="b:NF")) %>%
+  filter(ontology %in% c('lymphoMyeloid', 'nonLymphoMyeloid')) %>%
+  mutate(ontology=recode(ontology, lymphoMyeloid='LM', nonLymphoMyeloid='nonLM'))
+
+dim(dat)
+```
+
+```{r}
+headrandtail(dat, 3)
+```
+
+**IMPORTANT REMARK.** the “all” and “final” feature sets are identical.
+
+```r
+X = dat %>% filter(set == 'all')   %>% arrange(ontology, group, sort, category)
+Y = dat %>% filter(set == 'final') %>% arrange(ontology, group, sort, category)
+Z = bind_cols(X, Y)
+plot(Z$mean...2 - Z$mean...10)
+```
+
+```{r}
+o = str_split('PF:NF PF:mid PF:b PF:u NF:mid NF:b NF:u b:mid b:u', ' ')[[1]]
+
+pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group != 'b:NF'),
+            values_from=c(mean, max), names_from=ontology) %>%
+  mutate(group=fct_relevel(group, o)) %>%
+  mutate(x=mean_LM - mean_nonLM, y=max_LM) %>%
+  select(x, y) %>%
+  summary()
+```
+
+```{r, fig.width=3, fig.height=3}
+# NB: We ignore the lb and erroneously redundant comparisons (cf. filter)
+
+o = str_split('PF:NF PF:mid PF:b PF:u NF:mid NF:b NF:u b:mid b:u', ' ')[[1]]
+g = pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group != 'b:NF'),
+            values_from=c(mean, max), names_from=ontology) %>%
+  mutate(group=fct_relevel(group, o)) %>%
+  ggplot(aes(mean_LM - mean_nonLM, max_LM)) +
+  geom_point(aes(colour=group, shape=paste(category, sort))) +
+  scale_shape_manual(values=c(0, 1, 15, 16),
+                     labels=c('LincRNAs | FC',
+                              'LincRNAs | P',
+                              'Coding | FC',
+                              'Coding | P')) +
+  xlab('Specificity indicator') +
+  ylab('Sensitivity indicator') +
+  ggtitle('Performance map of model configurations') +
+  labs(shape='Gene categories\nSorting',
+       colour='Gene classes') +
+  xlim(-0.11, +.17) +
+  ylim(+0.55, 1.00);
+
+ggsave(filename='performance1_legend.png', as_ggplot(get_legend(g)))
+
+ggsave(filename='performance1.png', g + theme(legend.position='none'))
+
+g
+```
+
+```{r}
+pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group != 'b:NF'),
+            values_from=c(mean, max), names_from=ontology) %>%
+  mutate(group=fct_relevel(group, o))
+```
+
+
+```{r, fig.width=3, fig.height=3}
+g = pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group != 'b:NF'),
+            values_from=c(mean, max), names_from=ontology) %>%
+  group_by(group, sort, category) %>%
+  summarise(across(where(is.numeric), mean), .groups='drop') %>%
+  mutate(group=fct_relevel(group, o)) %>%
+  ggplot(aes(mean_LM - mean_nonLM, max_LM)) +
+  geom_point(aes(color=group, shape=paste(category, sort)), size=3) +
+  geom_text_repel(aes(label=group), size=2.5, nudge_y=.007) +
+    scale_shape_manual(values=c(0, 1, 15, 16),
+                     labels=c('LincRNAs | FC',
+                              'LincRNAs | P',
+                              'Coding | FC',
+                              'Coding | P')) +
+  xlab('Specificity indicator') +
+  ylab('Sensitivity indicator') +
+  ggtitle('Performance map of model configurations (averaged)') +
+  labs(shape='Gene categories\nSorting',
+       colour='Gene classes') +
+  xlim(-0.11, +.17) +
+  ylim(+0.55, 1.00)
+
+ggsave(filename='performance2_legend.png', as_ggplot(get_legend(g)))
+
+ggsave(filename='performance2.png', g + theme(legend.position='none'))
+
+g
+```
+
+```{r, fig.width=4, fig.height=3}
+t = pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group != 'b:NF'),
+            values_from=c(mean, max), names_from=ontology) %>%
+  group_by(group, sort, category) %>%
+  summarise(across(where(is.numeric), mean), .groups='drop') %>%
+  mutate(group=fct_relevel(group, o))
+
+u = tibble(
+  group=factor(c('PF:b', 'PF:mid', 'PF:u', 'PF:NF', 'PF:b', 'PF:b', 'PF:b'), levels=o),
+  category=c(rep('lincrna', 5), rep('mrna', 2)),
+  sort=c(rep('mann_whitney_pval', 4), rep('fold', 2), 'mann_whitney_pval'),
+  label=c(1:6, 6)
+)
+
+ggplot(t, aes(mean_LM - mean_nonLM, max_LM)) +
+  geom_point(aes(color=group, shape=paste(category, sort)), size=3) +
+  geom_text_repel(aes(label=group), size=2.5, nudge_y=.007) +
+  scale_shape_manual(values=c(0, 1, 15, 16),
+                     labels=c('LincRNAs | FC',
+                              'LincRNAs | P',
+                              'Coding | FC',
+                              'Coding | P')) +
+  geom_text_repel(data=right_join(t, u),
+            aes(mean_LM - mean_nonLM, max_LM, label=label),
+            size=5,
+            colour='gray',
+            arrow=arrow(length = unit(0.02, "npc")),
+            nudge_y=-.02, nudge_x=.01) +
+  xlab('Specificity indicator') +
+  ylab('Sensitivity indicator') +
+  ggtitle('Performance map of model configurations (averaged over feature sets)') +
+  labs(shape='Gene categories\nSorting',
+       colour='Gene classes') +
+  xlim(-0.11, +.17) +
+  ylim(+0.55, 1.00)
+```
+
+```{r, fig.width=4, fig.height=3}
+pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group != 'b:NF'),
+            values_from=c(mean, max), names_from=ontology) %>%
+  filter(category == 'mrna') %>%
+  group_by(group, sort, category) %>%
+  summarise(across(where(is.numeric), mean), .groups='drop') %>%
+  ggplot(aes(mean_LM - mean_nonLM, max_LM)) +
+  geom_point(aes(color=group, shape=paste(category, sort))) +
+  geom_text_repel(aes(label=group), size=2.5, nudge_y=.01) +
+  xlab('Specificity indicator') +
+  ylab('Sensitivity indicator') +
+  ggtitle('Performance map of model configurations (coding genes)') +
+  xlim(-.1, +.2) +
+  ylim(.6, 1.)
+```
+
+```{r, fig.width=4, fig.height=3}
+pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group != 'b:NF'),
+            values_from=c(mean, max), names_from=ontology) %>%
+  filter(category == 'lincrna') %>%
+  group_by(group, sort, category) %>%
+  summarise(across(where(is.numeric), mean), .groups='drop') %>%
+  ggplot(aes(mean_LM - mean_nonLM, max_LM)) +
+  geom_point(aes(color=group, shape=paste(category, sort))) +
+  geom_text_repel(aes(label=group), size=2.5, nudge_y=.01) +
+  xlab('Specificity indicator') +
+  ylab('Sensitivity indicator') +
+  ggtitle('Performance map of model configurations (lincRNAs)') +
+  xlim(-.1, +.2) +
+  ylim(.6, 1.)
+```
+
+```{r, fig.width=4, fig.height=3}
+pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group != 'b:NF'),
+            values_from=c(mean, max), names_from=ontology) %>%
+  group_by(group, sort, category) %>%
+  summarise(across(where(is.numeric), mean), .groups='drop') %>%
+  ggplot(aes(mean_LM - mean_nonLM, max_LM)) +
+  geom_point(aes(color=category)) +
+  geom_text_repel(aes(label=group), size=2.5, nudge_y=.01) +
+  xlab('Specificity indicator') +
+  ylab('Sensitivity indicator') +
+  ggtitle('Performance map of model configurations (lincRNAs)') +
+  xlim(-.1, +.2) +
+  ylim(.6, 1.)
+```
+
+```{r, fig.width=4, fig.height=3}
+pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group != 'b:NF'),
+            values_from=c(mean, max), names_from=ontology) %>%
+  group_by(group, sort, category) %>%
+  summarise(across(where(is.numeric), mean), .groups='drop') %>%
+  ggplot(aes(mean_LM - mean_nonLM, max_LM)) +
+  geom_point(aes(color=sort)) +
+  geom_text_repel(aes(label=group), size=2.5, nudge_y=.01) +
+  xlab('Specificity indicator') +
+  ylab('Sensitivity indicator') +
+  ggtitle('Performance map of model configurations (lincRNAs)') +
+  xlim(-.15, +.25) +
+  ylim(.6, 1.)
+```
+
+```{r, fig.width=3, fig.height=3}
+center = function (x) x - mean(x)
+
+g1 = pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group != 'b:NF'),
+            values_from=c(mean, max), names_from=ontology) %>%
+  mutate(set=recode(set, # Below FS numbers
+                    `Ulz`='1',
+                    `Ulzs`='2',
+                    `Ulzm-var`='3',
+                    `Ulzm-vars`='4',
+                    `Ulzm-peak`='5',
+                    `Ulzm-peaks`='6',
+                    `Ulzm-var-peak`='7',
+                    `Ulzm-vars-peak`='8',
+                    `Ulzm-var-peaks`='9',
+                    `Ulzm-vars-peaks`='10',
+                    `Full`='11',
+                    `final`='12',
+                    `all`='13'),
+         set=fct_relevel(set, as.character(1:13))) %>%
+  rename(sensitivity=max_LM) %>%
+  mutate(specificity=mean_LM - mean_nonLM) %>%
+  select(-mean_LM, -mean_nonLM, -max_nonLM) %>%
+  group_by(group, sort, category) %>%
+  mutate(across(where(is.numeric), center)) %>%
+  group_by(set) %>%
+  summarise(n=n(),
+            
+            min_sensitivity=min(sensitivity),
+            max_sensitivity=max(sensitivity),
+            sd_sensitivity=sd(sensitivity),
+            sensitivity=mean(sensitivity),
+            
+            min_specificity=min(specificity),
+            max_specificity=max(specificity),
+            sd_specificity=sd(specificity),
+            specificity=mean(specificity)) %>%
+# filter(set != 'Ulzs') %>%
+  ggplot(aes(specificity, sensitivity, colour=set)) +
+  geom_segment(aes(x=specificity,
+                   xend=specificity,
+                   y=sensitivity - sd_sensitivity/sqrt(n),
+                   yend=sensitivity + sd_sensitivity/sqrt(n))) +
+  geom_segment(aes(x=specificity - sd_specificity/sqrt(n),
+                   xend=specificity + sd_specificity/sqrt(n),
+                   y=sensitivity,
+                   yend=sensitivity)) +
+  geom_point(aes(colour=set), size=4) +
+  geom_text(aes(label=set), colour='#ffffff', size=2.5, fontface="bold") +
+  geom_rect(data=tibble(min=-.0048, max=+.0097),
+            aes(x=NULL, y=NULL, xmin=min, xmax=max, ymin=min, ymax=max, colour=NULL),
+            fill=NA, colour='lightgray') +
+  xlab('Specificity indicator') +
+  ylab('Sensitivity indicator') +
+  labs(colour='Feature set') +
+  ggtitle('Performance map of feature sets') +
+  xlim(-.04, +.01) +
+  ylim(-.04, +.01) +
+  theme(legend.position='none')
+
+ggsave(filename='fsperf_large.png', g1)
+
+g1
+```
+
+```{r, fig.asp=1, fig.width=3}
+g2 = pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group != 'b:NF'),
+            values_from=c(mean, max), names_from=ontology) %>%
+  mutate(set=recode(set, # Below FS numbers
+                    `Ulz`='1',
+                    `Ulzs`='2',
+                    `Ulzm-var`='3',
+                    `Ulzm-vars`='4',
+                    `Ulzm-peak`='5',
+                    `Ulzm-peaks`='6',
+                    `Ulzm-var-peak`='7',
+                    `Ulzm-vars-peak`='8',
+                    `Ulzm-var-peaks`='9',
+                    `Ulzm-vars-peaks`='10',
+                    `Full`='11',
+                    `final`='12',
+                    `all`='13'),
+         set=fct_relevel(set, as.character(1:13))) %>%
+  rename(sensitivity=max_LM) %>%
+  mutate(specificity=mean_LM - mean_nonLM) %>%
+  select(-mean_LM, -mean_nonLM, -max_nonLM) %>%
+  group_by(group, sort, category) %>%
+  mutate(across(where(is.numeric), center)) %>%
+  group_by(set) %>%
+  summarise(n=n(),
+            
+            min_sensitivity=min(sensitivity),
+            max_sensitivity=max(sensitivity),
+            sd_sensitivity=sd(sensitivity),
+            sensitivity=mean(sensitivity),
+            
+            min_specificity=min(specificity),
+            max_specificity=max(specificity),
+            sd_specificity=sd(specificity),
+            specificity=mean(specificity)) %>%
+  filter(set != '2') %>%
+  ggplot(aes(specificity, sensitivity, colour=set)) +
+  geom_segment(aes(x=specificity,
+                   xend=specificity,
+                   y=sensitivity - sd_sensitivity/sqrt(n),
+                   yend=sensitivity + sd_sensitivity/sqrt(n))) +
+  geom_segment(aes(x=specificity - sd_specificity/sqrt(n),
+                   xend=specificity + sd_specificity/sqrt(n),
+                   y=sensitivity,
+                   yend=sensitivity)) +
+  geom_point(aes(colour=set), size=4) +
+  geom_text(aes(label=set), colour='#ffffff', size=2.5, fontface="bold") +
+# geom_text_repel(aes(label=set), size=2.5, fontface="bold") +
+  geom_rect(data=tibble(min=-.0048, max=+.0097),
+            aes(x=NULL, y=NULL, xmin=min, xmax=max, ymin=min, ymax=max, colour=NULL),
+            fill=NA, colour='lightgray') +
+  xlab('Changes in specificity') +
+  ylab('Changes in sensitivity') +
+  labs(colour='Feature set') +
+  ggtitle('Performance map of feature sets (detail)') +
+  xlim(-.0048, +.0097) +
+  ylim(-.0048, +.0097) +
+  theme(legend.position='none')
+
+ggsave(filename='fsperf_defail.png', g2)
+
+g2
+```
+
+```{r, fig.width=3, fig.height=6}
+plot_grid(g1, g2, align='v', ncol=1)
+
+ggsave(filename='fsperf.png')
+```
+
+```{r}
+sessionInfo()
+```
+
