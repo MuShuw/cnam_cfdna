@@ -14,7 +14,7 @@ from bokeh.transform import factor_cmap, factor_mark
 from bokeh.models.widgets import CheckboxGroup
 from bokeh.models.widgets.markups import Div
 
-dt = pd.read_csv("data/042_SVC_performances_means/grouped_performance.tsv", sep="\t", index_col=0)
+dt = pd.read_csv("grouped_performance.tsv", sep="\t", index_col=0)
 dt_acu=dt[dt["performance"]=="accuracy_mean"]
 
 DT={}
@@ -55,8 +55,8 @@ def create_figure():
             (DF["features"].isin([FEATS[xx] for xx in feats_box.active])) &
             (DF["sortingMethod"].isin([SORTS[xx] for xx in sort_box.active])) 
            ].copy()
-    df["sz"]=[SIZES[xx] for xx in df[size.value].astype("category").cat.codes]
     
+
     source = ColumnDataSource(df)         
     
     x_title = x.value.title()
@@ -86,7 +86,11 @@ def create_figure():
         groups = pd.Categorical(df[size.value])
         sz = [SIZES[xx] for xx in groups.codes]
     
-    c = "#31AADE"
+    n_size=len(np.unique(groups.codes))
+    s_size=N_SIZES//n_size
+    df["sz"]=[SIZES[xx*s_size] for xx in df[size.value].astype("category").cat.codes]
+    source = ColumnDataSource(df)
+    #c = "#31AADE"
     if color.value != 'None' and not color.value in discrete :
         if len(set(df[color.value])) > N_COLORS:
             groups = pd.qcut(df[color.value].values, N_COLORS, duplicates='drop')
@@ -95,11 +99,10 @@ def create_figure():
         c = [COLORS[xx] for xx in groups.codes]
     elif color.value != 'None' :
         groups = pd.Categorical(df[color.value])
-        if np.max(groups.codes) < N_COLORS//2:
-            c = [COLORS[xx*2] for xx in groups.codes]
-        else :
-            c = [COLORS[xx] for xx in groups.codes]
-    c=factor_cmap(color.value, COLORS, DF[color.value].unique())
+    
+    n_col=len(np.unique(groups.codes))
+    s_col=N_COLORS//n_col
+    c=factor_cmap(color.value, [COLORS[i*s_col] for i in range(n_col)], DF[color.value].unique())
     
     hover = HoverTool(tooltips=[
     ("RNA type", "@rna_type"),
@@ -173,4 +176,4 @@ layout = row(controls, create_figure())
 
 curdoc().add_root(layout)
 curdoc().title = "CNAM CFDNA"
-output_file(filename="custom_filename.html", title="Static HTML file")
+#output_file(filename="custom_filename.html", title="Static HTML file")

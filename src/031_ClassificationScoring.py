@@ -139,6 +139,7 @@ except :
     print("Unproper table for features")
     sys.exit()
 
+print("before leuko")
 # Load feat_table sorted for leuko 
 try :
     leuko_table = pd.read_csv(args.lbinfeats, sep='\t', index_col=0)
@@ -176,7 +177,6 @@ for group in classif_grouping:
         perf_per_ontho[group][rank]={}
         for feat in feats_sel:
             perf_per_ontho[group][rank][feat]={}
-
 
 for onthology in glob.glob(args.indir+'*'):
     try :
