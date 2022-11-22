@@ -14,9 +14,9 @@ col_names = [
         "CL_0000037_hematopoietic_stem_cell",
         "CL_0000049_common_myeloid_progenitor",
         "CL_0000071_blood_vessel_endothelial_cell",
-        "CL_0000084_T_cell","CL_0000094_granulocyte",
+        "CL_0000084_T_cell",
+        "CL_0000094_granulocyte",
         "CL_0000097_mast_cell",
-        "CL_0000127_astrocyte",
         "CL_0000234_phagocyte",
         "CL_0000235_macrophage",
         "CL_0000236_B_cell",
@@ -27,7 +27,6 @@ col_names = [
         "CL_0000623_natural_killer_cell",
         "CL_0000624_CD4_positive_alpha_beta_T_cell",
         "CL_0000625_CD8_positive_alpha_beta_T_cell",
-        "CL_0000630_supportive_cell",
         "CL_0000738_leukocyte",
         "CL_0000763_myeloid_cell",
         "CL_0000766_myeloid_leukocyte",
@@ -44,19 +43,16 @@ col_names = [
         "CL_0000893_thymocyte",
         "CL_0000988_hematopoietic_cell",
         "CL_0000990_conventional_dendritic_cell",
-        "CL_0002138_endothelial_cell_of_lymphatic_vessel",
         "CL_0002396_CD14_low_CD16_positive_monocyte",
         "CL_0002397_CD14_positive_CD16_positive_monocyte",
-        "CL_0002554_fibroblast_of_lymphatic_vessel",
         "UBERON_0000178_blood",
-        "UBERON_0001473_lymphatic_vessel",
-        "UBERON_0001638_vein",
-        "UBERON_0001981_blood_vessel",
         "UBERON_0002193_hemolymphoid_system",
         "UBERON_0002390_hematopoietic_system",
         "UBERON_0002405_immune_system",
-        "UBERON_0002465_lymphoid_system",
-        "UBERON_0004177_hemopoietic_organ"]
+        "CL_0001014_CD1a_positive_Langerhans_cell",
+        "CL_0000453_Langerhans_cell",
+        "CL_0002619_adult_endothelial_progenitor_cell"
+        ]
 
 GROUPS=['PFb','NFb','PFNF','PFu','NFu','bu','PFlb','NFlb','blb','PFmid','NFmid','bmid','bNF']
 RNA_TYPE=["mrna","lincrna"]
