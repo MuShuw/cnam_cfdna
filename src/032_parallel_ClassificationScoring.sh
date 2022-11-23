@@ -33,7 +33,7 @@ for grouping in PFb NFb PFNF PFu NFu bu PFlb NFlb blb PFmid NFmid bmid bNF ;do
     echo $grouping
     for sort_by in mann_whitney_pval fold ;do
 	echo $sort_by
-        for feats in Ulz Ulzs Ulzm-var Ulzm-vars Ulzm-peak Ulzm-peaks Ulzm-var-peak Ulzm-vars-peak Ulzm-var-peaks Ulzm-vars-peaks Full final all ;do
+        for feats in Ulz Ulzs Ulzm-var Ulzm-vars Ulzm-peak Ulzm-peaks Ulzm-var-peak Ulzm-vars-peak Ulzm-var-peaks Ulzm-vars-peaks Full final ;do
 	    echo $feats
             if (( $(jobs | wc -l) >= max_jobs )); then
                 wait -n 
