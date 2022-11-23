@@ -31,8 +31,8 @@ FEAT_SELECTIONS=['Ulz',
                  'Ulzm-var-peaks',
                  'Ulzm-vars-peaks',
                  'Full',
-                 'final',
-                 'all']
+                 'final'
+                 ]
 FEATS_NAMES = ['FDmean', 
                'TSS2kFD', 'TSS2kFD_scaled',
                'TSSFD', 'TSSFD_scaled',
@@ -162,12 +162,9 @@ for group in args.grouping:
 
 # Check if feats selections are correct
 feats_sel=[]
-if 'all' in args.feats:
-    feats_sel = FEAT_SELECTIONS[:-1]
-else :
-    for feat in args.feats:
-        if feat in FEAT_SELECTIONS:
-            feats_sel.append(feat)
+for feat in args.feats:
+    if feat in FEAT_SELECTIONS:
+        feats_sel.append(feat)
 
 # Building dictionnaries
 perf_per_ontho={}
