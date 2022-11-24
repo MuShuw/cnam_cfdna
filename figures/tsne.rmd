@@ -1,0 +1,269 @@
+---
+title: "t-SNE"
+author: "MOUHOU Elyas"
+date: "24/11/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(data.table)
+library(dplyr)
+library(plotly)
+library(wesanderson)
+library(Rtsne)
+library(htmltools)
+library(R.utils)
+library(stringr)
+library(ggrepel)
+set.seed(1609)
+```
+
+## Expression Data
+
+```{r import expression data}
+# Here we import the file containing the Tag Per Million
+dt_expression = data.table::fread("FANTOM_CAT.expression_atlas.gene.lv3_robust.MEDIAN_tpm_PER_ONTHO_ELYAS.tsv",
+                                  stringsAsFactors = F,
+                                  drop=1)
+```
+
+```{r preprocessing expression data}
+geneIds = dt_expression$geneID
+
+## We tranpose the expression matrix and name the cols and rows 
+cellLines = colnames(dt_expression)[-1]
+dt_expression$geneID = NULL
+dt_expression = as.data.frame(t(dt_expression))
+colnames(dt_expression)=geneIds
+rownames(dt_expression)
+dim(dt_expression)
+
+## Eliminate null variation gene
+### Calculating the genes with var==0
+var_fold_gene = apply(dt_expression, MARGIN = 2, var)
+names(var_fold_gene) = colnames(dt_expression)
+cst_gene = names(var_fold_gene[var_fold_gene==0])
+
+### Filtering the constant genes from the expression table
+### And updating the lincRNA and mRNA IDs
+dt_expression<-setDT(dt_expression)
+dt_expression = dt_expression[,-..cst_gene]
+
+## log transform
+dt_expression_bis = log(dt_expression+0.0001)
+
+```
+
+```{r tsne}
+tsne <- Rtsne(as.matrix(dt_expression_bis),
+              check_duplicates=FALSE,
+              pca=TRUE,
+              perplexity=30,
+              theta=0.5,
+              dims=2)
+
+```
+
+## Performance Data
+
+```{r import performance data}
+## Import a performance file
+perf_filename='lincrna_PFb_mann_whitney_pval_Full_svc_Intermediary100.tsv' # for 1st plot 
+#perf_filename='lincrna_NFb_mann_whitney_pval_Full_svc_Intermediary100.tsv' # for 2cd plot
+#perf_filename='mrna_PFb_mann_whitney_pval_Full_svc_Intermediary100.tsv' # for 3rd plot
+
+```
+
+```{r preprocessing performance data}
+dt_perf = read.csv(perf_filename,
+				   sep='\t', row.names=1, header=T)
+dt_perf = as.data.frame(t(dt_perf))
+
+## We name the row 
+rownames(dt_expression_bis)=sort(rownames(dt_perf))
+
+## we use the dt_perf rownames because of mismatch but the order is the same
+## can be checked with :
+cellLines[cellLines!=sort(rownames(dt_perf))]
+sort(rownames(dt_perf))[cellLines!=sort(rownames(dt_perf))]
+```
+
+## Plots
+
+```{r plot element building}
+## Set element for plot
+accu = dt_perf$accuracy_mean
+names(accu)=rownames(dt_perf)
+col_from_accu = accu
+size_from_accu = accu
+labels_from_accu = accu
+names(col_from_accu) = names(size_from_accu) = names(labels_from_accu) = names(accu)
+
+## Set colors 
+colors_from_plot = as.vector(wes_palette("Zissou1", 9, type = "continuous"))
+col_from_accu[accu>0.9]=">.9"
+col_from_accu[accu<=0.9]="=<.9"
+col_from_accu[accu<=0.85]="=<.85"
+col_from_accu[accu<=0.8]="=<.8"
+col_from_accu[accu<=0.75]="=<.75"
+col_from_accu[accu<=0.7]="=<.7"
+col_from_accu[accu<=0.65]="=<.65"
+col_from_accu[accu<=0.6]="=<.6"
+col_from_accu[accu<=0.55]="=<.55"
+n_colors = length(unique(col_from_accu))
+
+## Titre and axis labels
+
+tissue=rep("any", 347)
+tissue[tsne$Y[,1]<=-19 & tsne$Y[,2]<=-4]="lm"
+tissue[tsne$Y[,1]>=16 & tsne$Y[,2]>=1]="brain"
+```
+
+```{r building the table for plots}
+TSNE=tsne$Y[,1:2]
+colnames(TSNE)=c("dim1","dim2")
+TSNE=as.data.frame(TSNE)
+TSNE$onto=rownames(dt_expression_bis)
+TSNE$tissue=tissue
+TSNE$accu=col_from_accu[TSNE$onto]
+TSNE$size=round((accu[rownames(dt_expression_bis)]+50)**20)
+setDT(TSNE)
+```
+
+```{r save TSNE}
+fwrite(TSNE, "tsne_table.tsv", sep = "\t")
+
+```
+
+```{r global tSNE}
+g <- ggplot(TSNE, aes(x=dim1, y=dim2, group=tissue))+
+  geom_point(aes(color=accu, size=size), alpha = 0.6)+
+  scale_color_manual(values=c(colors_from_plot[1:n_colors]))+
+  theme_minimal()+ 
+  theme(text = element_text(size = 20),
+        legend.position = c(.12, .75), # use for first plot
+        #legend.position = c(-1, -1), # use for 2cd and 3rd plots
+        legend.background = element_rect(fill = "white", color = "black"))+
+  guides(size = FALSE)+
+  annotate("rect", xmin=-29, xmax=-17.5,
+           ymin=-15.5 , ymax=-4.5,
+           alpha=0, color="red", size=1,
+           linetype = "dotted")+
+  annotate("text", x=-23, y=-2, label="Lymphomyeloid\ncluster",
+           color = "red", hjust = 0.5, size=5)+
+  annotate("rect", xmin=15, xmax=23.5,
+           ymin=10.5 , ymax=19,
+           alpha=0, color="green", size=1,
+           linetype = "dotted")+
+  annotate("text", x=20, y=8, label="Brain\ncluster",
+           color = "green", hjust = 0.5, size=5)+
+  xlab("Dimension 1")+
+  ylab("Dimension 2")
+g
+ggsave("lincrna_PFb_tsne.png", dpi=600) # 1st plot
+#ggsave("lincrna_NFb_tsne.png", dpi=600) # 2cd plot
+#ggsave("mrna_PFb_tsne.png", dpi=600) # 3rd plot
+
+```
+
+```{r zoomed tsne}
+getOntoName <- function(x, n){
+  nameList=str_split(string=x, pattern="_", n=3)
+  lastName=paste(nameList[[1]][1],nameList[[1]][2], sep=" ")
+  return(lastName)
+}
+
+labels=paste(sapply(TSNE$onto, getOntoName))
+
+
+g <- ggplot(TSNE, aes(x=dim1,
+                      y=dim2,
+                      group=tissue,
+                      label=labels
+                      )
+            )+
+  xlim(-28, -18.5)+
+  ylim(-14.5, -6)+
+  geom_point(aes(color=accu, size=size), alpha = 0.6)+
+  scale_color_manual(values=c(colors_from_plot[1:n_colors]))+
+  theme_minimal()+ 
+  theme(text = element_text(size = 20),
+        legend.position = c(-1, -1),
+        legend.background = element_rect(fill = "white", color = "black"))+
+  guides(size = FALSE)+
+  geom_text_repel(force=20,
+                  max.overlaps = 10
+                  )+
+  xlab("Dimension 1")+
+  ylab("Dimension 2")
+  
+g
+ggsave("ZoomTSNE.png", g)
+```
+
+```{r black and white tsne}
+g <- ggplot(TSNE, aes(x=dim1, y=dim2))+
+  geom_point(aes(alpha=0.5))+
+
+  theme_minimal()+ 
+
+  guides(alpha = FALSE)+
+  annotate("rect", xmin=-29, xmax=-17.5,
+           ymin=-15.5 , ymax=-4.5,
+           alpha=0, color="red", size=1,
+           linetype = "dotted")+
+  annotate("text", x=-23, y=-2, label="Lymphomyeloid\ncluster",
+           color = "red", hjust = 0.5, size=5)+
+  annotate("rect", xmin=15, xmax=23.5,
+           ymin=10.5 , ymax=19,
+           alpha=0, color="green", size=1,
+           linetype = "dotted")+
+  annotate("text", x=20, y=8, label="Brain\ncluster",
+           color = "green", hjust = 0.5, size=5)+
+  xlab("Dimension 1")+
+  ylab("Dimension 2")
+g
+ggsave("NB_tsne.png", dpi=600)
+
+```
+
+```{r plotly version}
+f <- list(
+  family = "Courier New, monospace",
+  size = 18,
+  color = "#7f7f7f ")
+titre <- paste("tSNE CV mean accuracy\n",perf_filename)
+x <- list(
+  title = "tSNE dimension 1",
+  titlefont = f)
+y <- list(
+  title = "tSNE dimension 2",
+  titlefont = f)
+t <- list(family = "sans serif",
+          size = 8,
+          color = toRGB("grey50"))
+
+j <- plot_ly(x=tsne$Y[,1],
+             y=tsne$Y[,2],
+             mode="markers+text",
+             label=paste(sapply(TSNE$onto, getOntoName),
+                        "\n",
+                        round(accu[rownames(dt_expression_bis)],2),
+                        'accuracy'),
+             color = col_from_accu[rownames(dt_expression_bis)],
+             colors = colors_from_plot[1:n_colors],
+             size = round((accu[rownames(dt_expression_bis)]+50)**20) ) %>% 
+  layout(title = "", xaxis = x, yaxis= y) %>%
+  add_markers() +
+  geom_text_repel()
+j
+
+
+ggsave(filename = "tsnePerf.png", plot = j, dpi = 300,
+  width = 10,
+  height = 6)
+out_file = "NFb_perf"
+save_html(j, paste(out_file,".html",collapse = ""), libdir = out_file )
+```
+
