@@ -36,8 +36,6 @@ cellLines = colnames(dt_expression)[-1]
 dt_expression$geneID = NULL
 dt_expression = as.data.frame(t(dt_expression))
 colnames(dt_expression)=geneIds
-rownames(dt_expression)
-dim(dt_expression)
 
 ## Eliminate null variation gene
 ### Calculating the genes with var==0
@@ -86,7 +84,6 @@ rownames(dt_expression_bis)=sort(rownames(dt_perf))
 ## we use the dt_perf rownames because of mismatch but the order is the same
 ## can be checked with :
 cellLines[cellLines!=sort(rownames(dt_perf))]
-sort(rownames(dt_perf))[cellLines!=sort(rownames(dt_perf))]
 ```
 
 ## Plots
@@ -247,16 +244,15 @@ t <- list(family = "sans serif",
 j <- plot_ly(x=tsne$Y[,1],
              y=tsne$Y[,2],
              mode="markers+text",
-             label=paste(sapply(TSNE$onto, getOntoName),
-                        "\n",
-                        round(accu[rownames(dt_expression_bis)],2),
+             text=paste(rownames(dt_expression_bis),
+                        round(accu[rownames(dt_expression_bis)],
+                              5),
                         'accuracy'),
              color = col_from_accu[rownames(dt_expression_bis)],
              colors = colors_from_plot[1:n_colors],
              size = round((accu[rownames(dt_expression_bis)]+50)**20) ) %>% 
   layout(title = "", xaxis = x, yaxis= y) %>%
-  add_markers() +
-  geom_text_repel()
+  add_markers()
 j
 
 
