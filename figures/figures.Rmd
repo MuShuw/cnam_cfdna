@@ -115,7 +115,7 @@ pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group != 'b
   summary()
 ```
 
-```{r, fig.width=3, fig.height=3}
+```{r}
 # NB: We ignore the lb and erroneously redundant comparisons (cf. filter)
 
 o = str_split('PF:NF PF:mid PF:b PF:u NF:mid NF:b NF:u b:mid b:u', ' ')[[1]]
@@ -125,17 +125,18 @@ g = pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group !
   ggplot(aes(mean_LM - mean_nonLM, max_LM)) +
   geom_point(aes(colour=group, shape=paste(category, sort))) +
   scale_shape_manual(values=c(0, 1, 15, 16),
-                     labels=c('LincRNAs | FC',
-                              'LincRNAs | P',
-                              'Coding | FC',
-                              'Coding | P')) +
+                     labels=c('LincRNAs & FC',
+                              'LincRNAs & P',
+                              'Coding & FC',
+                              'Coding & P')) +
   xlab('Specificity indicator') +
   ylab('Sensitivity indicator') +
   ggtitle('Performance map of model configurations') +
   labs(shape='Gene categories\nSorting',
        colour='Gene classes') +
-  xlim(-0.11, +.17) +
-  ylim(+0.55, 1.00);
+  xlim(-0.12, +.21) +
+  ylim(+0.5, 1.00) +
+  NULL;
 
 ggsave(filename='performance1_legend.png', as_ggplot(get_legend(g)))
 
@@ -161,17 +162,17 @@ g = pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group !
   geom_point(aes(color=group, shape=paste(category, sort)), size=3) +
   geom_text_repel(aes(label=group), size=2.5, nudge_y=.007) +
     scale_shape_manual(values=c(0, 1, 15, 16),
-                     labels=c('LincRNAs | FC',
-                              'LincRNAs | P',
-                              'Coding | FC',
-                              'Coding | P')) +
+                     labels=c('LincRNAs & FC',
+                              'LincRNAs & P',
+                              'Coding & FC',
+                              'Coding & P')) +
   xlab('Specificity indicator') +
   ylab('Sensitivity indicator') +
   ggtitle('Performance map of model configurations (averaged)') +
   labs(shape='Gene categories\nSorting',
        colour='Gene classes') +
-  xlim(-0.11, +.17) +
-  ylim(+0.55, 1.00)
+  xlim(-0.12, +.21) +
+  ylim(+0.5, 1.00)
 
 ggsave(filename='performance2_legend.png', as_ggplot(get_legend(g)))
 
