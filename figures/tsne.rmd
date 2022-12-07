@@ -137,28 +137,28 @@ fwrite(TSNE, "tsne_table.tsv", sep = "\t")
 g <- ggplot(TSNE, aes(x=dim1, y=dim2, group=tissue))+
   geom_point(aes(color=accu, size=size), alpha = 0.6)+
   scale_color_manual(values=c(colors_from_plot[1:n_colors]))+
-  theme_minimal()+ 
+   theme_bw()+ 
   theme(text = element_text(size = 20),
-        legend.position = c(.12, .75), # use for first plot
-        #legend.position = c(-1, -1), # use for 2cd and 3rd plots
+        #legend.position = c(.12, .75), # use for first plot
+        legend.position = c(-1, -1), # use for 2cd and 3rd plots
         legend.background = element_rect(fill = "white", color = "black"))+
   guides(size = FALSE)+
   annotate("rect", xmin=-29, xmax=-17.5,
            ymin=-15.5 , ymax=-4.5,
-           alpha=0, color="red", size=1,
+           alpha=0, color="black", size=1,
            linetype = "dotted")+
   annotate("text", x=-23, y=-2, label="Lymphomyeloid\ncluster",
-           color = "red", hjust = 0.5, size=5)+
+           color = "black", hjust = 0.5, size=5)+
   annotate("rect", xmin=15, xmax=23.5,
            ymin=10.5 , ymax=19,
-           alpha=0, color="green", size=1,
+           alpha=0, color="black", size=1,
            linetype = "dotted")+
   annotate("text", x=20, y=8, label="Brain\ncluster",
-           color = "green", hjust = 0.5, size=5)+
+           color = "black", hjust = 0.5, size=5)+
   xlab("Dimension 1")+
   ylab("Dimension 2")
 g
-ggsave("lincrna_PFb_tsne.png", dpi=600) # 1st plot
+#ggsave("lincrna_PFb_tsne.png", dpi=600) # 1st plot
 #ggsave("lincrna_NFb_tsne.png", dpi=600) # 2cd plot
 #ggsave("mrna_PFb_tsne.png", dpi=600) # 3rd plot
 
@@ -184,7 +184,7 @@ g <- ggplot(TSNE, aes(x=dim1,
   ylim(-14.5, -6)+
   geom_point(aes(color=accu, size=size), alpha = 0.6)+
   scale_color_manual(values=c(colors_from_plot[1:n_colors]))+
-  theme_minimal()+ 
+ theme_bw()+ 
   theme(text = element_text(size = 20),
         legend.position = c(-1, -1),
         legend.background = element_rect(fill = "white", color = "black"))+
@@ -203,8 +203,7 @@ ggsave("ZoomTSNE.png", g)
 g <- ggplot(TSNE, aes(x=dim1, y=dim2))+
   geom_point(aes(alpha=0.5))+
 
-  theme_minimal()+ 
-
+ theme_bw()+ 
   guides(alpha = FALSE)+
   annotate("rect", xmin=-29, xmax=-17.5,
            ymin=-15.5 , ymax=-4.5,
@@ -255,7 +254,9 @@ j <- plot_ly(x=tsne$Y[,1],
   add_markers()
 j
 
+```
 
+```{r}
 ggsave(filename = "tsnePerf.png", plot = j, dpi = 300,
   width = 10,
   height = 6)
