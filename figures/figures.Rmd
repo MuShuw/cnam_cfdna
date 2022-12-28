@@ -195,7 +195,7 @@ u = tibble(
   label=c(1:6, 6)
 )
 
-ggplot(t, aes(mean_LM - mean_nonLM, max_LM)) +
+g = ggplot(t, aes(mean_LM - mean_nonLM, max_LM)) +
   geom_point(aes(color=group, shape=paste(category, sort)), size=3) +
   geom_text_repel(aes(label=group), size=2.5, nudge_y=.007) +
   scale_shape_manual(values=c(0, 1, 15, 16),
@@ -214,8 +214,14 @@ ggplot(t, aes(mean_LM - mean_nonLM, max_LM)) +
   ggtitle('Performance map of model configurations (averaged over feature sets)') +
   labs(shape='Gene categories\nSorting',
        colour='Gene classes') +
-  xlim(-0.11, +.17) +
-  ylim(+0.55, 1.00)
+  xlim(-0.12, +.21) +
+  ylim(+0.5, 1.00)
+
+ggsave(filename='performance2_legend.png', as_ggplot(get_legend(g)))
+
+ggsave(filename='performance2.png', g + theme(legend.position='none'))
+
+g
 ```
 
 ```{r, fig.width=4, fig.height=3}
@@ -329,15 +335,15 @@ g1 = pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group 
                    yend=sensitivity)) +
   geom_point(aes(colour=set), size=4) +
   geom_text(aes(label=set), colour='#ffffff', size=2.5, fontface="bold") +
-  geom_rect(data=tibble(min=-.0048, max=+.0097),
+  geom_rect(data=tibble(min=-.005, max=+.014),
             aes(x=NULL, y=NULL, xmin=min, xmax=max, ymin=min, ymax=max, colour=NULL),
             fill=NA, colour='lightgray') +
   xlab('Specificity indicator') +
   ylab('Sensitivity indicator') +
   labs(colour='Feature set') +
   ggtitle('Performance map of feature sets') +
-  xlim(-.04, +.01) +
-  ylim(-.04, +.01) +
+  xlim(-.05, +.015) +
+  ylim(-.05, +.015) +
   theme(legend.position='none')
 
 ggsave(filename='fsperf_large.png', g1)
@@ -393,15 +399,15 @@ g2 = pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group 
   geom_point(aes(colour=set), size=4) +
   geom_text(aes(label=set), colour='#ffffff', size=2.5, fontface="bold") +
 # geom_text_repel(aes(label=set), size=2.5, fontface="bold") +
-  geom_rect(data=tibble(min=-.0048, max=+.0097),
+  geom_rect(data=tibble(min=-.005, max=+.014),
             aes(x=NULL, y=NULL, xmin=min, xmax=max, ymin=min, ymax=max, colour=NULL),
             fill=NA, colour='lightgray') +
   xlab('Changes in specificity') +
   ylab('Changes in sensitivity') +
   labs(colour='Feature set') +
   ggtitle('Performance map of feature sets (detail)') +
-  xlim(-.0048, +.0097) +
-  ylim(-.0048, +.0097) +
+  xlim(-.005, +.014) +
+  ylim(-.005, +.014) +
   theme(legend.position='none')
 
 ggsave(filename='fsperf_defail.png', g2)
