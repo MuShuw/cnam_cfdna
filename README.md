@@ -147,3 +147,12 @@ bash src/041_join_SVM_output.sh
 ### Calculating the means et medians of lymphomyeloid and non-lymphomyeloid ontologies
 
 python3 src/042_MeanMedianCacl.py -i data/04_SVC_performances/ -o data/042_SVC_performances_means/
+
+## Supplementary Information
+
+### Bokeh interactive plots
+
+```bash
+cd data/042_SVC_performances_means
+bokeh serve --show ../../src/051_generate_interactivePlot.py
+```

@@ -1,0 +1,451 @@
+---
+title: "Profiles"
+author: "Elyas Mouhou et al."
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE, comment=TRUE)
+options(readr.show_col_types = FALSE)
+```
+
+## Aim
+
+The aim is to compute average fragmentomic profiles for the gene classes corresponding to the neutrophil ontology.
+
+## Preamble
+
+```{r, message=FALSE, warning=FALSE}
+library('tidyverse')
+library('glue')
+library('matrixStats')
+library('RcppRoll')
+# library('ggrepel')
+# library('ggpubr')
+# library('gridExtra')
+# library('cowplot')
+theme_set(theme_bw())
+set.seed(123)
+```
+
+```{r}
+venn = function (A, B, count=FALSE) {
+  f = if (count) length else identity
+  lapply(
+    list( A=generics::setdiff(A, B),
+          AB=generics::intersect(A, B),
+          B=generics::setdiff(B, A)),
+    FUN=f)
+}
+```
+
+```{r}
+createq = function (gcl, sel, category, sort, class, n=25, by=50) {
+  gl = if (sel == '100_random_ubi') {
+    gcl %>%
+      filter(geneGrouping == '100_random_ubi') %>%
+      pull(geneID)
+  } else {
+    gcl %>%
+      filter(str_detect(ontology, 'CL_0000775_neutrophil') &
+               geneGrouping == sel) %>%
+      pull(geneID)
+  }
+  
+  gl = sort(gl)
+  
+  cat(class, '\t', gl[1:5], '\n')
+  
+  selected = dat %>% filter(geneID %in% gl)
+  profiles = selected %>% select(`-5000`:`5000`) %>% as.matrix
+  
+  cat('\t', dim(selected), '\n')
+  
+  q = colQuantiles(profiles, probs=c(.2, .5, .8)) %>%
+    as.data.frame() %>%
+    rownames_to_column(var='position') %>%
+    as_tibble %>%
+    mutate(position=as.integer(position),
+           mean=colMeans(profiles)) %>%
+    rename(low=`20%`, median=`50%`, high=`80%`)
+  
+  q = lapply(q %>% select(where(is.numeric)), FUN=function (x) roll_mean(x, n=n)) %>% as_tibble()
+  
+  q$category = category
+  q$sorting  = sort
+  q$class    = class
+  
+  q[seq(1, nrow(q), by=by), ]
+}
+```
+
+## Data
+
+### All gene classes
+
+How to define the gene classes
+
+```{r}
+files = list.files('../data/91_groupsForPubli/')
+names(files) = c('coding_FC', 'coding_P', 'lincRNA_FC', 'lincRNA_P')
+files = as.list(files)
+
+colnms = c('index',
+           'geneID',
+           'fold',
+           'mann_whitney_pval',
+           'chrom',
+           'CAT_geneClass',
+           'geneGrouping',
+           'ontology')
+
+readfrom = function (fn) {
+  fn = glue('../data/91_groupsForPubli/{fn}')
+  # cat('READING', fn, '\n')
+  dat = read_tsv(fn, skip=1, na='', col_names=colnms)
+  # cat(dim(dat), '\n')
+  dat
+}
+
+gclasses = lapply(files, FUN=readfrom)
+```
+
+```{r}
+gclasses[[1]] %>%
+  filter(str_detect(ontology, 'CL_0000775_neutrophil')) %>%
+  group_by(CAT_geneClass, geneGrouping) %>%
+  summarise(count=n(), .groups='drop')
+```
+
+```{r}
+gclasses[[1]] %>%
+  group_by(CAT_geneClass, geneGrouping) %>%
+  summarise(count=n(), .groups='drop')
+```
+
+```{r}
+# 
+gclasses[[1]] %>%
+  filter(geneGrouping == '100_random_ubi' | str_detect(ontology, 'CL_0000775_neutrophil')) %>%
+  group_by(CAT_geneClass, geneGrouping) %>%
+  summarise(count=n(), .groups='drop')
+```
+
+### Reconstitue some of the lists
+
+```{r}
+onto = read_table('../data/90_fantom/onto/CL_0000775_neutrophil.tsv.gz')
+head(onto)
+```
+
+```{r}
+onto %>% dplyr::count(geneCategory)
+```
+The following list corresponds to the (\*) ‘coding gene’ category (\*) using $p$ sorting (\*) PF class:
+
+```{r}
+gene_list_A = onto %>% filter(geneCategory == 'coding_mRNA') %>%
+  arrange(mann_whitney_pval) %>%
+  filter(fold > 0) %>%
+  slice_head(n=100) %>%
+  pull(geneID)
+```
+
+Let's check it's similar to what comes out of the gene classes loaded above
+
+```{r}
+gene_list_B = gclasses[[2]] %>%
+  filter(str_detect(ontology, 'CL_0000775_neutrophil') &
+           geneGrouping == 'first_100_values_with_pos_FC') %>%
+  pull(geneID)
+```
+
+```{r}
+venn(gene_list_A, gene_list_B, count=TRUE)
+```
+```{r}
+venn(gene_list_A, gene_list_B, count=FALSE)
+```
+
+
+The following list corresponds to the (\*) ‘coding gene’ category (\*) using  sorting (\*) NF class:
+
+```{r}
+gene_list_A = onto %>% filter(geneCategory == 'coding_mRNA') %>%
+  arrange(mann_whitney_pval) %>%
+  filter(fold < 0) %>%
+  slice_head(n=100) %>%
+  pull(geneID)
+```
+
+Let's check it's similar to what comes out of the gene classes loaded above
+
+```{r}
+gene_list_B = gclasses[[2]] %>%
+  filter(str_detect(ontology, 'CL_0000775_neutrophil') &
+           geneGrouping == 'first_100_values_with_neg_FC') %>%
+  pull(geneID)
+```
+
+```{r}
+venn(gene_list_A, gene_list_B, count=TRUE)
+```
+The following list corresponds to the (\*) ‘coding gene’ category (\*) using FC sorting (\*) PF class:
+
+```{r}
+gene_list_A = onto %>% filter(geneCategory == 'coding_mRNA') %>%
+  arrange(desc(fold)) %>%
+  slice_head(n=100) %>%
+  pull(geneID)
+```
+
+Let's check it's similar to what comes out of the gene classes loaded above
+
+```{r}
+gene_list_B = gclasses[[1]] %>%
+  filter(str_detect(ontology, 'CL_0000775_neutrophil') &
+           geneGrouping == 'first_100_values') %>%
+  pull(geneID)
+```
+
+```{r}
+venn(gene_list_A, gene_list_B, count=TRUE)
+```
+
+The following list corresponds to the (\*) ‘coding gene’ category (\*) using FC sorting (\*) NF class:
+
+```{r}
+gene_list_A = onto %>% filter(geneCategory == 'coding_mRNA') %>%
+  arrange(fold) %>%
+  slice_head(n=100) %>%
+  pull(geneID)
+```
+
+Let's check it's similar to what comes out of the gene classes loaded above
+
+```{r}
+gene_list_B = gclasses[[1]] %>%
+  filter(str_detect(ontology, 'CL_0000775_neutrophil') &
+           geneGrouping == 'last_100_values') %>%
+  pull(geneID)
+```
+
+```{r}
+venn(gene_list_A, gene_list_B, count=TRUE)
+```
+There is a discrepancy between the lists that may be due to TSS cluster considerations.
+
+## Read coding genes' profiles
+
+### Coding profiles
+
+```{r}
+dir = '../../cnam_cfdna_NOTSYNC/data/02_tss_score'
+fn  = 'FD_coding_mRNAscoreTable.tsv'
+path = glue('{dir}/{fn}')
+dat = read_tsv(path, n_max=3)
+```
+
+```{r}
+n = nrow(dat)
+p = ncol(dat)
+dat[, (p - 10):p]
+```
+
+```{r}
+dat = read_tsv(path)
+n = nrow(dat)
+p = ncol(dat)
+```
+
+There are $n = 20244$ genes and $p = 10006$ variables,
+including $10001$ positional variables (named `-5000` to `+5000`),
+`geneID`, `chrom`, `strand` and `start`.
+
+The following list corresponds to the (a) ‘coding gene’ category (b) using $p$ sorting (c) PF class. This is because we use `gclasses[[2]]` (a, b) and refer to the ‘first_100_values_with_pos_FC’.
+
+```{r}
+q = createq(gclasses[[1]],                  # coding | FC
+            'first_100_values_with_pos_FC', # PF
+            'coding', 'FC', 'PF')
+
+all = q
+#     bind_rows(all, q)
+
+q = createq(gclasses[[1]],                  # coding | FC
+            'first_100_values_with_neg_FC', # NF
+            'coding', 'FC', 'NF')
+
+all = bind_rows(all, q)
+
+q = createq(gclasses[[1]],                  # coding | FC
+            'last_100_values',              # b
+            'coding', 'FC', 'b')
+
+all = bind_rows(all, q)
+
+q = createq(gclasses[[1]],                  # coding | FC
+            'middle_100_values',            # mid
+            'coding', 'FC', 'mid')
+
+all = bind_rows(all, q)
+
+q = createq(gclasses[[1]],                  # coding | FC
+            '100_random_ubi',               # u
+            'coding', 'FC', 'u')
+
+all = bind_rows(all, q)
+```
+
+```{r}
+q = createq(gclasses[[2]],                  # coding | P
+            'first_100_values_with_pos_FC', # PF
+            'coding', 'P', 'PF')
+
+all = bind_rows(all, q) # q
+
+q = createq(gclasses[[2]],                  # coding | P
+            'first_100_values_with_neg_FC', # NF
+            'coding', 'P', 'NF')
+
+all = bind_rows(all, q)
+
+q = createq(gclasses[[2]],                  # coding | P
+            'last_100_values',              # b
+            'coding', 'P', 'b')
+
+all = bind_rows(all, q)
+
+q = createq(gclasses[[2]],                  # coding | P
+            'middle_100_values',            # mid
+            'coding', 'P', 'mid')
+
+all = bind_rows(all, q)
+
+q = createq(gclasses[[2]],                  # coding | P
+            '100_random_ubi',               # u
+            'coding', 'P', 'u')
+
+all = bind_rows(all, q)
+```
+```{r}
+q = createq(gclasses[[3]],                  # lincRNAs | FC
+            '100_random_ubi',               # u
+            'lincRNAs', 'FC', 'u')
+
+all = bind_rows(all, q)
+
+q = createq(gclasses[[4]],                  # lincRNAs | P
+            '100_random_ubi',               # u
+            'lincRNAs', 'P', 'u')
+
+all = bind_rows(all, q)
+```
+
+### Non coding profiles
+
+```{r}
+dir = '../../cnam_cfdna_NOTSYNC/data/02_tss_score'
+fn  = 'FD_lncRNA_intergenicscoreTable.tsv'
+path = glue('{dir}/{fn}')
+dat = read_tsv(path, n_max=3)
+```
+
+```{r}
+n = nrow(dat)
+p = ncol(dat)
+dat[, (p - 10):p]
+```
+
+```{r}
+dat = read_tsv(path)
+n = nrow(dat)
+p = ncol(dat)
+```
+
+```{r}
+q = createq(gclasses[[3]],                  # lincRNAs | FC
+            'first_100_values_with_pos_FC', # PF
+            'lincRNAs', 'FC', 'PF')
+
+all = bind_rows(all, q) # q
+
+q = createq(gclasses[[3]],                  # lincRNAs | FC
+            'first_100_values_with_neg_FC', # NF
+            'lincRNAs', 'FC', 'NF')
+
+all = bind_rows(all, q)
+
+q = createq(gclasses[[3]],                  # lincRNAs | FC
+            'last_100_values',              # b
+            'lincRNAs', 'FC', 'b')
+
+all = bind_rows(all, q)
+
+q = createq(gclasses[[3]],                  # lincRNAs | FC
+            'middle_100_values',            # mid
+            'lincRNAs', 'FC', 'mid')
+
+all = bind_rows(all, q)
+```
+
+```{r}
+q = createq(gclasses[[4]],                  # lincRNAs | P
+            'first_100_values_with_pos_FC', # PF
+            'lincRNAs', 'P', 'PF')
+
+all = bind_rows(all, q) # q
+
+q = createq(gclasses[[4]],                  # lincRNAs | P
+            'first_100_values_with_neg_FC', # NF
+            'lincRNAs', 'P', 'NF')
+
+all = bind_rows(all, q)
+
+q = createq(gclasses[[4]],                  # lincRNAs | P
+            'last_100_values',              # b
+            'lincRNAs', 'P', 'b')
+
+all = bind_rows(all, q)
+
+q = createq(gclasses[[4]],                  # lincRNAs | P
+            'middle_100_values',            # mid
+            'lincRNAs', 'P', 'mid')
+
+all = bind_rows(all, q)
+```
+
+```{r}
+head(all)
+```
+
+### Figure
+
+```{r}
+all %>%
+  mutate(category_sorting=paste(category, sorting, sep='_'),
+         category_sorting=fct_relevel(category_sorting,
+                                      c('coding_P', 'coding_FC',
+                                        'lincRNAs_P', 'lincRNAs_FC')),
+         class=fct_relevel(class, c('PF', 'NF', 'mid', 'b', 'u'))) %>%
+  ggplot(aes(position, mean)) +
+  geom_ribbon(aes(ymin=low, ymax=high), fill='lightgray') +
+  geom_line() +
+  facet_grid(class ~ category_sorting,
+             labeller=labeller(category_sorting=c(
+               coding_P='A  Coding - P sorting',
+               coding_FC='B  Coding - FC sorting',
+               lincRNAs_P='C  LincRNAs - P sorting',
+               lincRNAs_FC='D  LincRNAs - FC sorting'))) +
+  theme(strip.background=element_rect(color=NA, fill=NA,
+                                      size=1.5, linetype="solid"),
+        axis.text.x=element_text(angle=45, hjust=1)) +
+  xlab('Position wrt TSS')
+```
+
+
+```{r, fig.asp=1.2}
+ggsave(filename='all_profiles.png')
+```
+
