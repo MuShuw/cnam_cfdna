@@ -22,8 +22,6 @@ def set_generic_group(ranks, leuko_table, ubi_table):
     return pd.concat([leuko_feats, ubi_sample])
 
 def set_onthologic_group(ranks, feat_table, ontho):
-    print(feat_table.columns)
-    quit()
     top_val = feat_table[:ranks][['geneID','fold','mann_whitney_pval','chrom','CAT_geneClass']]
     top_val["geneGrouping"]="first_{}_values".format(ranks)
     bot_val = feat_table[-ranks][['geneID','fold','mann_whitney_pval','chrom','CAT_geneClass']]
