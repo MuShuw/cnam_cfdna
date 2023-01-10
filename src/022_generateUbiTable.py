@@ -6,7 +6,7 @@ INFO="data/90_fantom/intermediary/FANTOM_CAT.lv3_robust.info_table.gene.tsv.gz"
 fant=pd.read_csv(UBIS, sep=";")
 info=pd.read_csv(INFO, sep="\t")
 
-fant = fant.rename({"DPI peak":"DPI"})
+fant = fant.rename({"DPI peak":"DPI"}, axis=1)
 info = info.rename({"strongest_DPIClstrID":"DPI"}, axis=1)
 
 dt = pd.merge(info, fant)
@@ -18,7 +18,7 @@ def mySplit(ser):
 
 X=dt["loc"].map(mySplit)
 
-dt["chrom"]=X
+dt["chrom"]=X.copy()
 
 dt=dt[~dt["chrom"].isin(["chrX","chrY"])]
 
