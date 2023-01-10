@@ -148,6 +148,35 @@ bash src/041_join_SVM_output.sh
 
 python3 src/042_MeanMedianCacl.py -i data/04_SVC_performances/ -o data/042_SVC_performances_means/
 
+## Creating the groups
+
+
+```bash
+mrna="data/03_features/mRNA_features.tsv"
+linc="data/03_features/lincRNA_features.tsv"
+
+
+rank=100
+onto="data/90_fantom/onto/"
+leuko="data/03b_control_features/Leuko_feats"
+ubi="data/03b_control_features/Ubi_feats.tsv"
+
+sort=(mann_whitney_pval fold mann_whitney_pval fold)
+table=($mrna $mrna $linc $linc)
+rna=(coding_mRNA coding_mRNA lncRNA_intergenic lncRNA_intergenic)
+
+for i in 0 1 2 3; do
+    NAME=ARN"${rna[$i]}"_sortedBy_"${sort[$i]}"
+    python3 src/90_GroupsForProfil.py -v               \
+        -r $rank                                       \ # rank=100
+        -i $onto                                       \ # ontologies folder
+        -o data/03b_control_features/$NAME             \ # output name
+        -if $table[$i]                                 \ # target RNA features
+        -lbf $leuko
+        -u $ubi
+        -sb $sort[$i]                                  \ # sort
+```
+
 ## Supplementary Information
 
 ### Bokeh interactive plots
