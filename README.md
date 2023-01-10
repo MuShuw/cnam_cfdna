@@ -170,7 +170,7 @@ for i in 0 1 2 3; do
     python3 src/90_GroupsForProfil.py -v               \
         -r $rank                                       \ # rank=100
         -i $onto                                       \ # ontologies folder
-        -o data/03b_control_features/$NAME             \ # output name
+        -o $NAME                                       \ # output name
         -if ${table[$i]}                                 \ # target RNA features
         -lbf $leuko
         -u $ubi
