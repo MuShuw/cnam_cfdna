@@ -158,7 +158,7 @@ linc="data/03_features/lincRNA_features.tsv"
 
 rank=100
 onto="data/90_fantom/onto/"
-leuko="data/03b_control_features/Leuko_feats"
+leuko="data/03b_control_features/Leuko_feats.tsv"
 ubi="data/03b_control_features/Ubi_feats.tsv"
 
 sort=(mann_whitney_pval fold mann_whitney_pval fold)
@@ -171,10 +171,10 @@ for i in 0 1 2 3; do
         -r $rank                                       \ # rank=100
         -i $onto                                       \ # ontologies folder
         -o data/03b_control_features/$NAME             \ # output name
-        -if $table[$i]                                 \ # target RNA features
+        -if ${table[$i]}                                 \ # target RNA features
         -lbf $leuko
         -u $ubi
-        -sb $sort[$i]                                  \ # sort
+        -sb ${sort[$i]}                                  \ # sort
 ```
 
 ## Supplementary Information

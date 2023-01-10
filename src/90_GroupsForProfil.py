@@ -73,14 +73,14 @@ except :
 try :
     leuko_table = pd.read_csv(args.lbinfeats, sep='\t', index_col=0)
 except :
-    print("Unproper table for features ubis")
+    print("Unproper table for features leuko")
     sys.exit()
 
 # Load feat_table for ubi
 try :
     ubi_table = pd.read_csv(args.ubigenes, sep='\t', index_col=0)
 except :
-    print("Unproper table for features")
+    print("Unproper table for features ubis")
     sys.exit()
 
 Y=set_generic_group(args.rank[0], leuko_table, ubi_table)
