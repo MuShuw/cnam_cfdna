@@ -24,7 +24,7 @@ def set_generic_group(ranks, leuko_table, ubi_table):
 def set_onthologic_group(ranks, feat_table, ontho):
     top_val = feat_table[:ranks][['geneID','fold','mann_whitney_pval','chrom','CAT_geneClass']]
     top_val["geneGrouping"]="first_{}_values".format(ranks)
-    bot_val = feat_table[-ranks][['geneID','fold','mann_whitney_pval','chrom','CAT_geneClass']]
+    bot_val = feat_table[-ranks:][['geneID','fold','mann_whitney_pval','chrom','CAT_geneClass']]
     bot_val["geneGrouping"]="last_{}_values".format(ranks)
     mid_val = feat_table[round((feat_table.shape[0]-ranks)/2):round((feat_table.shape[0]+ranks)/2)][['geneID','fold','mann_whitney_pval','chrom','CAT_geneClass']]
     mid_val["geneGrouping"]="middle_{}_values".format(ranks)
@@ -32,7 +32,7 @@ def set_onthologic_group(ranks, feat_table, ontho):
     pos["geneGrouping"]="first_{}_values_with_pos_FC".format(ranks)
     neg = feat_table[feat_table.fold<0][:ranks][['geneID','fold','mann_whitney_pval','chrom','CAT_geneClass']]
     neg["geneGrouping"]="first_{}_values_with_neg_FC".format(ranks)
-    top_val["ontology"]=bot_val["ontology"]=mid_val["ontology"]=pos_val["ontology"]=neg_val["ontology"]=ontho
+    top_val["ontology"]=bot_val["ontology"]=mid_val["ontology"]=pos["ontology"]=neg["ontology"]=ontho
     return pd.concat([top_val, bot_val, pos, neg, mid_val])
 
 
