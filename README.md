@@ -84,7 +84,7 @@ The script `032_parallel_ClassificationScoring.sh` is used to train the gene cla
 ```bash
 bash 032_parallel_ClassificationScoring.sh     \
      data/03_features/lincRNA_features.tsv     \ # linc features (from previous step)
-     data/04_SVC_performances/lincrna/         \ # output directory
+     data/04_SVC_performances/lincrna_alt/     \ # output directory
      100                                       \ # number of genes in each class
      data/90_fantom/onto/                      \ # ontologies
      data/03b_control_features/Leuko_feats.tsv \ # features with leukocyte p-values/FC
@@ -123,7 +123,7 @@ python3 03b_ClassificationScoring.py -v            \
     -g $group                                      \ # group="PFb"
     -sb $sort                                      \ # sort="mann_whitney_pval" 
     -f $feats                                      \ # feats="Ulz"
-    -if $cat      \
+    -if $cat      				   \
     -lbf data/03b_control_features/Leuko_feats.tsv \
     -u data/03b_control_features/Ubi_feats.tsv     \
     -o data/04_SVC_performances/"$NAME"_svc_Intermediary # output file
@@ -171,10 +171,10 @@ for i in 0 1 2 3; do
         -r $rank                                       \ # rank=100
         -i $onto                                       \ # ontologies folder
         -o $NAME                                       \ # output name
-        -if ${table[$i]}                                 \ # target RNA features
-        -lbf $leuko
-        -u $ubi
-        -sb ${sort[$i]}                                  \ # sort
+        -if ${table[$i]}                               \ # target RNA features
+        -lbf $leuko				       \ # leukocyte bot feats 
+        -u $ubi					       \ # fantom ubi feats
+        -sb ${sort[$i]}                                \ # sort
 ```
 
 ## Supplementary Information
