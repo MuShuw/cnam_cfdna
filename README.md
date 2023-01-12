@@ -45,9 +45,9 @@ Long intergenic, non-coding RNAL
 python src/01_ScorePerSite.py -i data/01_chr_score/ -o data/02_tss_score/ -gc lncRNA_intergenic -ft5 data/90_fantom/intermediary/
 ```
 
-## 02 Features extraction
+## Features extraction
 
-The script `02_FeatsExtraction.py` calculate the features for each genes
+The script `02_FeatsExtraction.py` calculates the features for each gene
 
 <dl>
 <dt>Input</dt> <dd>Gene-centric WPS and FD table for a either class (coding or intergenic lncRNAs)</dd>
@@ -77,9 +77,9 @@ A *model configuration* is given by choosing
 
 We test many model configurations.
 
-The script `032_parallel_ClassificationScoring.sh` is used to train the gene classification model for each FANTOM ontology and each model configurations. It relies, internally, on the `03b_ClassificationScoring.py` script, which trains an SVM model for each model configuration (see below).
+The script `032_parallel_ClassificationScoring.sh` is used to train the gene classification model for each FANTOM ontology and each model configurations. It relies, internally, on the `031_ClassificationScoring.py` script, which trains an SVM model for each model configuration (see below).
 
-### LincRNA configurations
+### Model configurations using lincRNAs
 
 ```bash
 bash 032_parallel_ClassificationScoring.sh     \
@@ -91,7 +91,7 @@ bash 032_parallel_ClassificationScoring.sh     \
      data/03b_control_features/Ubi_feats.tsv     # features of ubiquitous genes
 ```
 
-### Running mRNA scoring
+### Model configurations using coding genes
 
 ```bash
 bash 032_parallel_ClassificationScoring.sh     \
@@ -103,13 +103,14 @@ bash 032_parallel_ClassificationScoring.sh     \
      data/03b_control_features/Ubi_feats.tsv
 ```
 
-### Classification model
+### Classification model for a given model configuration
 
 The classification model used in this work is a kernel support vector machine (implemented by Scikit-Learn).
 
 The configuration is parametered by the variables `cat`, `group`, `sort` and `feats`:
 
 ```bash
+# Model configuration
 cat="data/03_features/lincRNA_features.tsv"
 group="PFb"
 sort="mann_whitney_pval"
@@ -117,7 +118,7 @@ feats="Ulz"
 rank=100
 NAME="$group"_"$sort"_"$feats"
 
-python3 03b_ClassificationScoring.py -v            \
+python3 031_ClassificationScoring.py -v            \
     -r $rank                                       \ # rank=100
     -i data/90_fantom/onto/                        \
     -g $group                                      \ # group="PFb"
@@ -138,23 +139,35 @@ In this example:
 
 ## Postprocessing
 
-## Joining SVM output in one folder
+Joining SVM output in one folder
 
+```bash
 bash src/041_join_SVM_output.sh
+```
 
-## 042
+Calculating the means et medians of lymphomyeloid and non-lymphomyeloid ontologies
 
-### Calculating the means et medians of lymphomyeloid and non-lymphomyeloid ontologies
-
+```bash
 python3 src/042_MeanMedianCacl.py -i data/04_SVC_performances/ -o data/042_SVC_performances_means/
+```
 
-## Creating the groups
+## Miscellaneous
 
+### *t*-SNE
+
+```bash
+python 053_FANTOM_countcpm.py
+python 054_FANTOM_groupingPerOntho.py
+R --no-save < 054_tsne.R
+```
+
+### Gene classes
+
+This is used to output all gene classes:
 
 ```bash
 mrna="data/03_features/mRNA_features.tsv"
 linc="data/03_features/lincRNA_features.tsv"
-
 
 rank=100
 onto="data/90_fantom/onto/"
@@ -179,9 +192,23 @@ for i in 0 1 2 3; do
 
 ## Supplementary Information
 
-### Bokeh interactive plots
+### Lymphomyeloid cluster
+
+List of ontologies included in the lymphomyeloid cluster: `1_LM_cluster.tsv` (based on the hard-coded list contained in `042_MeanMedianCacl.py`).
+
+## Performance table
+
+Results per ontology and per model configuration are provided in this GitHub repository (in `data/04_SVC_performances`). Summary statistics comparing lymphomyeloid and non-lymphomyeloid clusters are provided in the `2_grouped_performance.tsv` file.
+
+### Bokeh interactive performance plot
 
 ```bash
-cd data/042_SVC_performances_means
-bokeh serve --show ../../src/051_generate_interactivePlot.py
+cd supplementary
+bokeh serve --show 3_performance_plot.py
 ```
+
+NB: `3_performance_plot.py` is a slightly modified version of `051_generate_interactivePlot.py`.
+
+### Plotly interactive t-SNE
+
+By executing interactively the 054_tsne.R script (once `053_FANTOM_countcpm.py` and `054_FANTOM_groupingPerOntho.py` have been run).
