@@ -23,7 +23,7 @@ set.seed(1609)
 
 ```{r import expression data}
 # Here we import the file containing the Tag Per Million
-dt_expression = data.table::fread("FANTOM_CAT.expression_atlas.gene.lv3_robust.MEDIAN_tpm_PER_ONTHO_ELYAS.tsv",
+dt_expression = data.table::fread("../data/90_fantom/intermediary/FANTOM_CAT.expression_atlas.gene.lv3_robust.MEDIAN_tpm_PER_ONTHO_ELYAS.tsv",
                                   stringsAsFactors = F,
                                   drop=1)
 ```
@@ -67,7 +67,7 @@ tsne <- Rtsne(as.matrix(dt_expression_bis),
 
 ```{r import performance data}
 ## Import a performance file
-perf_filename='lincrna_PFb_mann_whitney_pval_Full_svc_Intermediary100.tsv' # for 1st plot 
+perf_filename='../data/04_SVC_performances/lincrna_PFb_mann_whitney_pval_Full_svc_Intermediary100.tsv' # for 1st plot 
 #perf_filename='lincrna_NFb_mann_whitney_pval_Full_svc_Intermediary100.tsv' # for 2cd plot
 #perf_filename='mrna_PFb_mann_whitney_pval_Full_svc_Intermediary100.tsv' # for 3rd plot
 
@@ -244,6 +244,7 @@ j <- plot_ly(x=tsne$Y[,1],
              y=tsne$Y[,2],
              mode="markers+text",
              text=paste(rownames(dt_expression_bis),
+                        "\n",
                         round(accu[rownames(dt_expression_bis)],
                               5),
                         'accuracy'),
@@ -260,7 +261,7 @@ j
 ggsave(filename = "tsnePerf.png", plot = j, dpi = 300,
   width = 10,
   height = 6)
-out_file = "NFb_perf"
+out_file = "4_tsne"
 save_html(j, paste(out_file,".html",collapse = ""), libdir = out_file )
 ```
 
