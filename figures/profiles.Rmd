@@ -168,7 +168,8 @@ gene_list_B = gclasses[[2]] %>%
 venn(gene_list_A, gene_list_B, count=TRUE)
 ```
 ```{r}
-venn(gene_list_A, gene_list_B, count=FALSE)
+V = venn(gene_list_A, gene_list_B, count=FALSE)
+V
 ```
 
 
