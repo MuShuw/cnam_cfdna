@@ -21,11 +21,13 @@ library('tidyverse')
 library('glue')
 library('matrixStats')
 library('RcppRoll')
+library('data.table')
+library('readr')
 # library('ggrepel')
 # library('ggpubr')
 # library('gridExtra')
 # library('cowplot')
-theme_set(theme_bw())
+# theme_set(theme_bw())
 set.seed(123)
 ```
 
@@ -146,6 +148,7 @@ The following list corresponds to the (\*) ‘coding gene’ category (\*) using
 
 ```{r}
 gene_list_A = onto %>% filter(geneCategory == 'coding_mRNA') %>%
+  arrange(fold)  %>%
   arrange(mann_whitney_pval) %>%
   filter(fold > 0) %>%
   slice_head(n=100) %>%
