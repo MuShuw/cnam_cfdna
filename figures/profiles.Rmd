@@ -438,10 +438,33 @@ all %>%
   geom_line() +
   facet_grid(class ~ category_sorting,
              labeller=labeller(category_sorting=c(
-               coding_P='A  Coding - P sorting',
+               coding_P='A  Coding - P sorting'),
                coding_FC='B  Coding - FC sorting',
                lincRNAs_P='C  LincRNAs - P sorting',
-               lincRNAs_FC='D  LincRNAs - FC sorting'))) +
+               lincRNAs_FC='D  LincRNAs - FC sorting')) +
+  theme(strip.background=element_rect(color=NA, fill=NA,
+                                      size=1.5, linetype="solid"),
+        axis.text.x=element_text(angle=45, hjust=1)) +
+  xlab('Position wrt TSS')
+```
+
+```{r}
+all %>%
+  mutate(category_sorting=paste(category, sorting, sep='_'),
+         category_sorting=fct_relevel(category_sorting,
+                                      c('coding_P', 'coding_FC',
+                                        'lincRNAs_P', 'lincRNAs_FC')),
+         class=fct_relevel(class, c('PF', 'NF', 'mid', 'b', 'u'))) %>%
+  mutate(labs=recode(category_sorting,
+                      coding_P='bold("A")~"Coding - P sorting"',
+                      coding_FC='bold("B")~"Coding - FC sorting"',
+                      lincRNAs_P='bold("C")~"LincRNAs - P sorting"',
+                      lincRNAs_FC='bold("D")~"LincRNAs - FC sorting"')) %>%
+  ggplot(aes(position, mean)) +
+  geom_ribbon(aes(ymin=low, ymax=high), fill='lightgray') +
+  geom_line() +
+  facet_grid(class ~ labs,
+             labeller=label_parsed) +
   theme(strip.background=element_rect(color=NA, fill=NA,
                                       size=1.5, linetype="solid"),
         axis.text.x=element_text(angle=45, hjust=1)) +
@@ -451,5 +474,6 @@ all %>%
 
 ```{r, fig.asp=1.2}
 ggsave(filename='all_profiles.png')
+ggsave(filename='all_profiles.pdf')
 ```
 
