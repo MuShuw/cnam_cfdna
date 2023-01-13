@@ -118,12 +118,21 @@ pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group != 'b
 ```{r}
 # NB: We ignore the lb and erroneously redundant comparisons (cf. filter)
 
+# Based on https://stackoverflow.com/questions/32123288/position-ggplot-text-in-each-corner
+annotations <- tibble(
+        xpos=c(-Inf, -Inf, Inf, Inf),
+        ypos=c(-Inf, Inf, -Inf, Inf),
+        label=c("BL", "TL", "BR", "TR"),
+        hjustvar=c(0, 0, 1, 1) ,
+        vjustvar=c(0, 1, 0, 1))
+
 o = str_split('PF:NF PF:mid PF:b PF:u NF:mid NF:b NF:u b:mid b:u', ' ')[[1]]
 g = pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group != 'b:NF'),
             values_from=c(mean, max), names_from=ontology) %>%
   mutate(group=fct_relevel(group, o)) %>%
   ggplot(aes(mean_LM - mean_nonLM, max_LM)) +
   geom_point(aes(colour=group, shape=paste(category, sort))) +
+  geom_text() +
   scale_shape_manual(values=c(0, 1, 15, 16),
                      labels=c('LincRNAs & FC',
                               'LincRNAs & P',
@@ -174,9 +183,9 @@ g = pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group !
   xlim(-0.12, +.21) +
   ylim(+0.5, 1.00)
 
-ggsave(filename='performance2_legend.png', as_ggplot(get_legend(g)))
+# ggsave(filename='performance2_legend.png', as_ggplot(get_legend(g)))
 
-ggsave(filename='performance2.png', g + theme(legend.position='none'))
+# ggsave(filename='performance2.png', g + theme(legend.position='none'))
 
 g
 ```
@@ -418,6 +427,7 @@ g2
 ```{r, fig.width=3, fig.height=6}
 plot_grid(g1, g2, align='v', ncol=1)
 
+ggsave(filename='fsperf.png')
 ggsave(filename='fsperf.png')
 ```
 
