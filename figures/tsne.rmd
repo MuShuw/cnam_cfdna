@@ -173,27 +173,27 @@ getOntoName <- function(x, n){
 
 labels=paste(sapply(TSNE$onto, getOntoName))
 
+# Create a vector of labels to set in bold
+bold_labels <- c("UBERON 0002390", "CL 0000988", "CL 0000763", "CL 0000771",
+                 "CL 0000625", "UBERON 0000178", "CL 0000097", "CL 0000453")
 
-g <- ggplot(TSNE, aes(x=dim1,
-                      y=dim2,
-                      group=tissue,
-                      label=labels
-                      )
-            )+
+library(dplyr)
+
+TSNE <- TSNE %>% mutate(fontface = ifelse(labels %in% bold_labels,"bold","plain"))
+
+g <- ggplot(TSNE, aes(x=dim1, y=dim2, group=tissue)) +
   xlim(-28, -18.5)+
   ylim(-14.5, -6)+
   geom_point(aes(color=accu, size=size), alpha = 0.6)+
   scale_color_manual(values=c(colors_from_plot[1:n_colors]))+
- theme_bw()+ 
-  theme(text = element_text(size = 20),
-        legend.position = c(-1, -1),
+  theme_bw()+ 
+  theme(legend.position = c(-1, -1),
         legend.background = element_rect(fill = "white", color = "black"))+
   guides(size = FALSE)+
-  geom_text_repel(force=20,
-                  max.overlaps = 10
-                  )+
+  geom_text_repel(aes(label = labels, fontface = fontface), force=20, max.overlaps = 10) +
   xlab("Dimension 1")+
   ylab("Dimension 2")
+
   
 g
 ggsave("ZoomTSNE.png", g)
