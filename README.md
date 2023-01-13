@@ -196,7 +196,7 @@ for i in 0 1 2 3; do
 
 List of ontologies included in the lymphomyeloid cluster: `1_LM_cluster.tsv` (based on the hard-coded list contained in `042_MeanMedianCacl.py`).
 
-## Performance table
+### Performance table
 
 Results per ontology and per model configuration are provided in this GitHub repository (in `data/04_SVC_performances`). Summary statistics comparing lymphomyeloid and non-lymphomyeloid clusters are provided in the `2_grouped_performance.tsv` file.
 
