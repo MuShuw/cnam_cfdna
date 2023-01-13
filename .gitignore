@@ -3,3 +3,4 @@ data/00_bam/*
 data/01_chr_score/*
 data/02_tss_score/*
 .ipynb_checkpoints
+.DS_Store
