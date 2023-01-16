@@ -16,6 +16,7 @@ library(htmltools)
 library(R.utils)
 library(stringr)
 library(ggrepel)
+
 set.seed(1609)
 ```
 
@@ -67,13 +68,13 @@ tsne <- Rtsne(as.matrix(dt_expression_bis),
 
 ```{r import performance data}
 ## Import a performance file
-perf_filename='../data/04_SVC_performances/lincrna_PFb_mann_whitney_pval_Full_svc_Intermediary100.tsv' # for 1st plot 
-#perf_filename='lincrna_NFb_mann_whitney_pval_Full_svc_Intermediary100.tsv' # for 2cd plot
-#perf_filename='mrna_PFb_mann_whitney_pval_Full_svc_Intermediary100.tsv' # for 3rd plot
+#perf_filename='../data/04_SVC_performances/lincrna_PFb_mann_whitney_pval_Full_svc_Intermediary100.tsv' # for 1st plot 
+perf_filename='../data/04_SVC_performances/lincrna_NFb_mann_whitney_pval_Full_svc_Intermediary100.tsv' # for 2cd plot
+#perf_filename='../data/04_SVC_performances/mrna_PFb_mann_whitney_pval_Full_svc_Intermediary100.tsv' # for 3rd plot
 
 ```
 
-```{r preprocessing performance data}
+```{r preprocessing performance data, include=FALSE}
 dt_perf = read.csv(perf_filename,
 				   sep='\t', row.names=1, header=T)
 dt_perf = as.data.frame(t(dt_perf))
@@ -88,7 +89,7 @@ cellLines[cellLines!=sort(rownames(dt_perf))]
 
 ## Plots
 
-```{r plot element building}
+```{r plot element building, include=FALSE}
 ## Set element for plot
 accu = dt_perf$accuracy_mean
 names(accu)=rownames(dt_perf)
@@ -117,7 +118,7 @@ tissue[tsne$Y[,1]<=-19 & tsne$Y[,2]<=-4]="lm"
 tissue[tsne$Y[,1]>=16 & tsne$Y[,2]>=1]="brain"
 ```
 
-```{r building the table for plots}
+```{r building the table for plots, include=FALSE}
 TSNE=tsne$Y[,1:2]
 colnames(TSNE)=c("dim1","dim2")
 TSNE=as.data.frame(TSNE)
@@ -134,35 +135,35 @@ fwrite(TSNE, "tsne_table.tsv", sep = "\t")
 ```
 
 ```{r global tSNE}
-g <- ggplot(TSNE, aes(x=dim1, y=dim2, group=tissue))+
+# first plot
+g1 <- ggplot(TSNE, aes(x=dim1, y=dim2, group=tissue))+
   geom_point(aes(color=accu, size=size), alpha = 0.6)+
   scale_color_manual(values=c(colors_from_plot[1:n_colors]))+
    theme_bw()+ 
   theme(text = element_text(size = 20),
-        #legend.position = c(.12, .75), # use for first plot
-        legend.position = c(-1, -1), # use for 2cd and 3rd plots
-        legend.background = element_rect(fill = "white", color = "black"))+
+        legend.position = c(.08, .74), # use for first plot
+        legend.background = element_rect(fill = "white", color = "black"),
+        plot.title = element_text(size = 25, hjust = 0.5))+
   guides(size = FALSE)+
   annotate("rect", xmin=-29, xmax=-17.5,
            ymin=-15.5 , ymax=-4.5,
-           alpha=0, color="black", size=1,
+           alpha=0, color="black", size=2,
            linetype = "dotted")+
   annotate("text", x=-23, y=-2, label="Lymphomyeloid\ncluster",
-           color = "black", hjust = 0.5, size=5)+
+           color = "black", hjust = 0.5, size=7)+
   annotate("rect", xmin=15, xmax=23.5,
            ymin=10.5 , ymax=19,
-           alpha=0, color="black", size=1,
+           alpha=0, color="black", size=2,
            linetype = "dotted")+
   annotate("text", x=20, y=8, label="Brain\ncluster",
-           color = "black", hjust = 0.5, size=5)+
+           color = "black", hjust = 0.5, size=7)+
+  annotate("text", x=-30, y=20, label="A",
+           color="black", hjust = 0.5, size=9)+
   xlab("Dimension 1")+
-  ylab("Dimension 2")
-g
-#ggsave("lincrna_PFb_tsne.png", dpi=600) # 1st plot
-#ggsave("lincrna_NFb_tsne.png", dpi=600) # 2cd plot
-#ggsave("mrna_PFb_tsne.png", dpi=600) # 3rd plot
-
+  ylab("Dimension 2")+
+  ggtitle(label = "LincRNAs PF:b (best model config)")
 ```
+
 
 ```{r zoomed tsne}
 getOntoName <- function(x, n){
@@ -177,27 +178,100 @@ labels=paste(sapply(TSNE$onto, getOntoName))
 bold_labels <- c("UBERON 0002390", "CL 0000988", "CL 0000763", "CL 0000771",
                  "CL 0000625", "UBERON 0000178", "CL 0000097", "CL 0000453")
 
-library(dplyr)
 
 TSNE <- TSNE %>% mutate(fontface = ifelse(labels %in% bold_labels,"bold","plain"))
 
-g <- ggplot(TSNE, aes(x=dim1, y=dim2, group=tissue)) +
+g2 <- ggplot(TSNE, aes(x=dim1, y=dim2, group=tissue)) +
   xlim(-28, -18.5)+
   ylim(-14.5, -6)+
   geom_point(aes(color=accu, size=size), alpha = 0.6)+
   scale_color_manual(values=c(colors_from_plot[1:n_colors]))+
   theme_bw()+ 
-  theme(legend.position = c(-1, -1),
-        legend.background = element_rect(fill = "white", color = "black"))+
+  theme(text = element_text(size = 20),
+        legend.position = c(-1, -1),
+        legend.background = element_rect(fill = "white", color = "black"),
+        plot.title = element_text(size = 25, hjust = 0.5))+
   guides(size = FALSE)+
-  geom_text_repel(aes(label = labels, fontface = fontface), force=20, max.overlaps = 10) +
+  geom_text_repel(aes(label = labels, fontface = fontface), force=20, max.overlaps = 10, size=5)+
+  annotate("text", x=-28, y=-6, label="B",
+           color="black", hjust = 0.5, size=9) +
   xlab("Dimension 1")+
-  ylab("Dimension 2")
+  ylab("Dimension 2")+
+  ggtitle(label = "Detail of the lymphomyeloid cluster")
 
   
-g
-ggsave("ZoomTSNE.png", g)
+#g2
+#ggsave("ZoomTSNE.png", g2)
 ```
+
+
+```{r global tSNE}
+g4 <- ggplot(TSNE, aes(x=dim1, y=dim2, group=tissue))+
+  geom_point(aes(color=accu, size=size), alpha = 0.6)+
+  scale_color_manual(values=c(colors_from_plot[1:n_colors]))+
+   theme_bw()+ 
+  theme(text = element_text(size = 20),
+        legend.position = c(-1, -1), # use for 2cd and 3rd plots
+        legend.background = element_rect(fill = "white", color = "black"),
+        plot.title = element_text(size = 25, hjust = 0.5))+
+  guides(size = FALSE)+
+  annotate("rect", xmin=-29, xmax=-17.5,
+           ymin=-15.5 , ymax=-4.5,
+           alpha=0, color="black", size=2,
+           linetype = "dotted")+
+  annotate("text", x=-23, y=-2, label="Lymphomyeloid\ncluster",
+           color = "black", hjust = 0.5, size=7)+
+  annotate("rect", xmin=15, xmax=23.5,
+           ymin=10.5 , ymax=19,
+           alpha=0, color="black", size=2,
+           linetype = "dotted")+
+  annotate("text", x=20, y=8, label="Brain\ncluster",
+           color = "black", hjust = 0.5, size=7)+
+  annotate("text", x=-30, y=20, label="D",
+           color="black", hjust = 0.5, size=9)+
+  xlab("Dimension 1")+
+  ylab("Dimension 2")+
+  ggtitle(label = "LincRNAs NF:b")
+#ggsave("lincrna_PFb_tsne.png", dpi=600) # 1st plot
+#ggsave("lincrna_NFb_tsne.png", dpi=600) # 2cd plot
+#ggsave("mrna_PFb_tsne.png", dpi=600) # 3rd plot
+
+```
+
+```{r global tSNE}
+g3 <- ggplot(TSNE, aes(x=dim1, y=dim2, group=tissue))+
+  geom_point(aes(color=accu, size=size), alpha = 0.6)+
+  scale_color_manual(values=c(colors_from_plot[1:n_colors]))+
+   theme_bw()+ 
+  theme(text = element_text(size = 20),
+        legend.position = c(-1, -1), # use for 2cd and 3rd plots
+        legend.background = element_rect(fill = "white", color = "black"),
+        plot.title = element_text(size = 25, hjust = 0.5))+
+  guides(size = FALSE)+
+  annotate("rect", xmin=-29, xmax=-17.5,
+           ymin=-15.5 , ymax=-4.5,
+           alpha=0, color="black", size=1,
+           linetype = "dotted")+
+  annotate("text", x=-23, y=-2, label="Lymphomyeloid\ncluster",
+           color = "black", hjust = 0.5, size=5)+
+  annotate("rect", xmin=15, xmax=23.5,
+           ymin=10.5 , ymax=19,
+           alpha=0, color="black", size=1,
+           linetype = "dotted")+
+  annotate("text", x=20, y=8, label="Brain\ncluster",
+           color = "black", hjust = 0.5, size=5)+
+  annotate("text", x=-30, y=20, label="C",
+           color="black", hjust = 0.5, size=9)+
+  xlab("Dimension 1")+
+  ylab("Dimension 2")+
+  ggtitle(label = "Coding genes PF:b")
+```
+
+```{r include=FALSE}
+cowplot::plot_grid(g1, g2, g3, g4, align='v', ncol=2)
+ggsave(filename='tSNE.png', height = 18, width = 18)
+```
+
 
 ```{r black and white tsne}
 g <- ggplot(TSNE, aes(x=dim1, y=dim2))+
