@@ -120,11 +120,12 @@ pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group != 'b
 
 # Based on https://stackoverflow.com/questions/32123288/position-ggplot-text-in-each-corner
 annotations <- tibble(
-        xpos=c(-Inf, -Inf, Inf, Inf),
-        ypos=c(-Inf, Inf, -Inf, Inf),
-        label=c("BL", "TL", "BR", "TR"),
-        hjustvar=c(0, 0, 1, 1) ,
-        vjustvar=c(0, 1, 0, 1))
+        xpos=c(-.12),
+        ypos=c(+1.),
+        label=c("A"),
+        hjustvar=c(0),
+        vjustvar=c(1))
+# geom_text(data=annotations, aes(xpos, ypos, hjust=hjustvar, vjust=vjustvar, label=label), size=9) +
 
 o = str_split('PF:NF PF:mid PF:b PF:u NF:mid NF:b NF:u b:mid b:u', ' ')[[1]]
 g = pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group != 'b:NF'),
@@ -132,7 +133,7 @@ g = pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group !
   mutate(group=fct_relevel(group, o)) %>%
   ggplot(aes(mean_LM - mean_nonLM, max_LM)) +
   geom_point(aes(colour=group, shape=paste(category, sort))) +
-  geom_text() +
+  geom_text(data=annotations, aes(xpos, ypos, hjust=hjustvar, vjust=vjustvar, label=label), size=9) +
   scale_shape_manual(values=c(0, 1, 15, 16),
                      labels=c('LincRNAs & FC',
                               'LincRNAs & P',
@@ -162,6 +163,13 @@ pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group != 'b
 
 
 ```{r, fig.width=3, fig.height=3}
+annotations <- tibble(
+        xpos=c(-.12),
+        ypos=c(+1.),
+        label=c("B"),
+        hjustvar=c(0),
+        vjustvar=c(1))
+
 g = pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group != 'b:NF'),
             values_from=c(mean, max), names_from=ontology) %>%
   group_by(group, sort, category) %>%
@@ -175,6 +183,7 @@ g = pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group !
                               'LincRNAs & P',
                               'Coding & FC',
                               'Coding & P')) +
+  geom_text(data=annotations, aes(xpos, ypos, hjust=hjustvar, vjust=vjustvar, label=label), size=9) +
   xlab('Specificity indicator') +
   ylab('Sensitivity indicator') +
   ggtitle('Performance map of model configurations (averaged)') +
@@ -218,6 +227,7 @@ g = ggplot(t, aes(mean_LM - mean_nonLM, max_LM)) +
             colour='gray',
             arrow=arrow(length = unit(0.02, "npc")),
             nudge_y=-.02, nudge_x=.01) +
+  geom_text(data=annotations, aes(xpos, ypos, hjust=hjustvar, vjust=vjustvar, label=label), size=9) +
   xlab('Specificity indicator') +
   ylab('Sensitivity indicator') +
   ggtitle('Performance map of model configurations (averaged over feature sets)') +
@@ -296,6 +306,14 @@ pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group != 'b
 ```
 
 ```{r, fig.width=3, fig.height=3}
+annotations <- tibble(
+        xpos=c(-.05),
+        ypos=c(+.015),
+        label=c("A"),
+        hjustvar=c(0),
+        vjustvar=c(1))
+# geom_text(data=annotations, aes(xpos, ypos, hjust=hjustvar, vjust=vjustvar, label=label), size=9) +
+
 center = function (x) x - mean(x)
 
 g1 = pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group != 'b:NF'),
@@ -347,6 +365,7 @@ g1 = pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group 
   geom_rect(data=tibble(min=-.005, max=+.014),
             aes(x=NULL, y=NULL, xmin=min, xmax=max, ymin=min, ymax=max, colour=NULL),
             fill=NA, colour='lightgray') +
+  geom_text(data=annotations, aes(colour=NULL, xpos, ypos, hjust=hjustvar, vjust=vjustvar, label=label), size=9) +
   xlab('Specificity indicator') +
   ylab('Sensitivity indicator') +
   labs(colour='Feature set') +
@@ -355,12 +374,19 @@ g1 = pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group 
   ylim(-.05, +.015) +
   theme(legend.position='none')
 
-ggsave(filename='fsperf_large.png', g1)
+ggsave(filename='fsperf_large.png', g1, width=7, height=7)
 
 g1
 ```
 
-```{r, fig.asp=1, fig.width=3}
+```{r, fig.width=3, fig.height=3}
+annotations <- tibble(
+        xpos=c(-.0048),
+        ypos=c(+.013),
+        label=c("B"),
+        hjustvar=c(0),
+        vjustvar=c(1))
+
 g2 = pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group != 'b:NF'),
             values_from=c(mean, max), names_from=ontology) %>%
   mutate(set=recode(set, # Below FS numbers
@@ -411,6 +437,7 @@ g2 = pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group 
   geom_rect(data=tibble(min=-.005, max=+.014),
             aes(x=NULL, y=NULL, xmin=min, xmax=max, ymin=min, ymax=max, colour=NULL),
             fill=NA, colour='lightgray') +
+  geom_text(data=annotations, aes(colour=NULL, xpos, ypos, hjust=hjustvar, vjust=vjustvar, label=label), size=9) +
   xlab('Changes in specificity') +
   ylab('Changes in sensitivity') +
   labs(colour='Feature set') +
@@ -419,7 +446,7 @@ g2 = pivot_wider(dat %>% filter(set != 'all' & ! str_ends(group, ':lb') & group 
   ylim(-.005, +.014) +
   theme(legend.position='none')
 
-ggsave(filename='fsperf_defail.png', g2)
+ggsave(filename='fsperf_defail.png', g2, width=7, height=7)
 
 g2
 ```
