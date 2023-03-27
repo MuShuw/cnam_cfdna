@@ -14,7 +14,7 @@ from bokeh.transform import factor_cmap, factor_mark
 from bokeh.models.widgets import CheckboxGroup
 from bokeh.models.widgets.markups import Div
 
-dt = pd.read_csv("2_grouped_performance.tsv", sep="\t", index_col=0)
+dt = pd.read_csv("S2_grouped_performance.tsv", sep="\t", index_col=0)
 dt_acu=dt[dt["performance"]=="accuracy_mean"]
 
 DT={}
