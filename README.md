@@ -204,10 +204,10 @@ Results per ontology and per model configuration are provided in this GitHub rep
 
 ```bash
 cd supplementary
-bokeh serve --show 3_performance_plot.py
+bokeh serve --show S3_performance_plot.py
 ```
 
-NB: `3_performance_plot.py` is a slightly modified version of `051_generate_interactivePlot.py`.
+NB: `S3_performance_plot.py` is a slightly modified version of `051_generate_interactivePlot.py`.
 
 ### Plotly interactive t-SNE
 
